@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import type { TrafficEvent } from "@/lib/supabase/types";
 import { ROLLING_WINDOW, MAX_THREAT_ENTRIES } from "@/lib/constants";
+import { EventBuffer } from "@/lib/event-buffer";
 
 export function useTrafficStream() {
   const [events, setEvents] = useState<TrafficEvent[]>([]);
@@ -11,22 +12,36 @@ export function useTrafficStream() {
   const [isConnected, setIsConnected] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const bufferRef = useRef<EventBuffer<TrafficEvent> | null>(null);
 
-  const addEvent = useCallback((event: TrafficEvent) => {
+  const handleFlush = useCallback((batch: TrafficEvent[]) => {
     setEvents((prev) => {
-      const next = [event, ...prev];
+      const next = [...batch, ...prev];
       return next.slice(0, ROLLING_WINDOW);
     });
 
-    setTotalCount((prev) => prev + 1);
+    setTotalCount((prev) => prev + batch.length);
 
-    if (event.threat_level > 0) {
+    const threatBatch = batch.filter((e) => e.threat_level > 0);
+    if (threatBatch.length > 0) {
       setThreats((prev) => {
-        const next = [event, ...prev];
+        const next = [...threatBatch, ...prev];
         return next.slice(0, MAX_THREAT_ENTRIES);
       });
     }
   }, []);
+
+  // Start/stop event buffer
+  useEffect(() => {
+    const buffer = new EventBuffer<TrafficEvent>(handleFlush, 300);
+    buffer.start();
+    bufferRef.current = buffer;
+
+    return () => {
+      buffer.stop();
+      bufferRef.current = null;
+    };
+  }, [handleFlush]);
 
   useEffect(() => {
     // Fetch initial events
@@ -59,7 +74,7 @@ export function useTrafficStream() {
         },
         (payload) => {
           const newEvent = payload.new as TrafficEvent;
-          addEvent(newEvent);
+          bufferRef.current?.push(newEvent);
         }
       )
       .subscribe((status) => {
@@ -73,7 +88,7 @@ export function useTrafficStream() {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [addEvent]);
+  }, []);
 
   return { events, threats, isConnected, totalCount };
 }

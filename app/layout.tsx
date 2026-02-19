@@ -23,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${jetbrainsMono.variable} font-mono antialiased bg-cyber-bg text-matrix-green`}>
+      <body suppressHydrationWarning className={`${jetbrainsMono.variable} font-mono antialiased bg-cyber-bg text-matrix-green`}>
         <Providers>{children}</Providers>
       </body>
     </html>

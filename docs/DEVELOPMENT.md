@@ -11,11 +11,12 @@
 3. [Supabase 설정](#3-supabase-설정)
 4. [로컬 개발](#4-로컬-개발)
 5. [데이터 생성기 실행](#5-데이터-생성기-실행)
-6. [빌드 및 배포](#6-빌드-및-배포)
-7. [트러블슈팅](#7-트러블슈팅)
-8. [개발 규칙](#8-개발-규칙)
-9. [브랜치 전략](#9-브랜치-전략)
-10. [코드 리뷰 체크리스트](#10-코드-리뷰-체크리스트)
+6. [테스트](#6-테스트)
+7. [빌드 및 배포](#7-빌드-및-배포)
+8. [트러블슈팅](#8-트러블슈팅)
+9. [개발 규칙](#9-개발-규칙)
+10. [브랜치 전략](#10-브랜치-전략)
+11. [코드 리뷰 체크리스트](#11-코드-리뷰-체크리스트)
 
 ---
 
@@ -192,9 +193,95 @@ TRUNCATE TABLE traffic_events;
 
 ---
 
-## 6. 빌드 및 배포
+## 6. 테스트
 
-### 6.1 프로덕션 빌드
+### 6.1 테스트 스택
+
+| 도구 | 용도 |
+|------|------|
+| **Vitest** | 테스트 러너 + assertion |
+| **@testing-library/react** | 컴포넌트 렌더링 + DOM 쿼리 |
+| **@testing-library/jest-dom** | DOM matcher 확장 |
+| **jsdom** | 브라우저 환경 시뮬레이션 |
+
+### 6.2 테스트 실행
+
+```bash
+# 전체 테스트 실행
+npm run test
+
+# 워치 모드 (개발 중 파일 변경 감지)
+npm run test:watch
+
+# 커버리지 리포트 생성
+npm run test:coverage
+```
+
+### 6.3 테스트 파일 구조
+
+테스트 파일은 소스와 같은 모듈의 `__tests__/` 디렉토리에 배치합니다:
+
+```
+lib/
+├── constants.ts
+├── traffic-generator.ts
+└── __tests__/
+    ├── constants.test.ts
+    └── traffic-generator.test.ts
+
+hooks/
+├── useTrafficStats.ts
+└── __tests__/
+    └── useTrafficStats.test.ts
+
+components/
+├── dashboard/
+│   ├── Header.tsx
+│   ├── LogTerminal.tsx
+│   └── MobileNav.tsx
+├── effects/
+│   └── GlitchText.tsx
+├── ui/
+│   └── CyberPanel.tsx
+└── __tests__/
+    ├── CyberPanel.test.tsx
+    ├── Header.test.tsx
+    ├── LogTerminal.test.tsx
+    ├── GlitchText.test.tsx
+    └── MobileNav.test.tsx
+```
+
+### 6.4 테스트 작성 규칙
+
+> **새로운 기능이나 버그 수정 시 반드시 테스트를 함께 작성해야 합니다.**
+
+| 대상 | 테스트 방법 | 예시 |
+|------|-----------|------|
+| 순수 함수/유틸 | 입출력 검증, 엣지 케이스 | `constants.test.ts` |
+| 커스텀 훅 | `renderHook`으로 상태 변화 검증 | `useTrafficStats.test.ts` |
+| 컴포넌트 | 렌더링, 인터랙션, 조건부 렌더링 | `CyberPanel.test.tsx` |
+| 확률 로직 | 100~1000회 반복 통계 검증 | `traffic-generator.test.ts` |
+
+### 6.5 테스트 환경 설정
+
+`vitest.setup.ts`에 브라우저 API 모킹이 설정되어 있습니다:
+
+- **ResizeObserver** — Globe 반응형 사이즈 감지
+- **requestAnimationFrame** — MatrixRain 캔버스 애니메이션
+- **matchMedia** — 반응형 미디어 쿼리
+
+### 6.6 커밋 전 필수 검증
+
+```bash
+npm run test && npm run lint && npm run build
+# 세 가지 모두 통과해야 커밋 가능
+```
+
+---
+
+## 7. 빌드 및 배포
+
+### 7.1 프로덕션 빌드
 
 ```bash
 npm run build
@@ -207,13 +294,13 @@ Route (app)                                 Size  First Load JS
 └ ○ /_not-found                            995 B         103 kB
 ```
 
-### 6.2 로컬 프로덕션 테스트
+### 7.2 로컬 프로덕션 테스트
 
 ```bash
 npm run build && npm start
 ```
 
-### 6.3 Vercel 배포
+### 7.3 Vercel 배포
 
 #### CLI 배포
 ```bash
@@ -233,7 +320,7 @@ npx vercel --prod
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production (선택적) |
 
-### 6.4 데이터 생성기 운영
+### 7.4 데이터 생성기 운영
 
 데이터 생성기는 프론트엔드와 별도로 실행해야 합니다:
 
@@ -246,7 +333,7 @@ npx vercel --prod
 
 ---
 
-## 7. 트러블슈팅
+## 8. 트러블슈팅
 
 ### three.js 모듈 해석 오류
 
@@ -296,7 +383,7 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 
 ---
 
-## 8. 개발 규칙
+## 9. 개발 규칙
 
 ### 파일 생성 규칙
 
@@ -321,7 +408,7 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 
 ---
 
-## 9. Git 워크플로우
+## 10. Git 워크플로우
 
 > **⚠ 모든 Git 사용 규칙은 `/docs/GIT_WORKFLOW.md` 문서를 반드시 따라야 합니다.**
 
@@ -332,13 +419,13 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 - **`main`/`dev` 직접 커밋 금지** — PR을 통해서만 머지
 - **작업 브랜치는 `dev`에서 분기** — 핫픽스만 `main`에서 분기
 - **커밋 컨벤션:** `<type>(<scope>): <subject>` (Conventional Commits)
-- **PR 머지 전 필수:** `npm run lint && npm run build` 통과
+- **PR 머지 전 필수:** `npm run test && npm run lint && npm run build` 통과
 - **머지 전략:** 작업→dev는 Squash and Merge, dev→main은 Merge Commit
 - **금지:** `--force` push (main/dev), `.env.local` 커밋, WIP 상태 머지
 
 ---
 
-## 10. 코드 리뷰 체크리스트
+## 11. 코드 리뷰 체크리스트
 
 ### Git 규칙
 - [ ] 올바른 브랜치에서 분기했는가? (dev 또는 main)
@@ -360,6 +447,11 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 - [ ] TypeScript 타입이 정확한가?
 - [ ] `"use client"` 디렉티브가 적절한가?
 - [ ] 사이버 테마 컨벤션을 따르는가?
+
+### 테스트
+- [ ] 새 기능/수정에 대한 테스트가 작성되었는가?
+- [ ] `npm run test`가 전체 통과하는가?
+- [ ] 기존 테스트를 깨뜨리지 않았는가?
 
 ### 빌드
 - [ ] `npm run build`가 성공하는가?

@@ -9,7 +9,7 @@
 **Traffic Sight**는 사이버펑크/매트릭스 테마의 실시간 네트워크 트래픽 모니터링 대시보드입니다.
 Faker.js로 가짜 트래픽 데이터를 생성하고, Supabase에 저장한 뒤 Supabase Realtime으로 프론트엔드에 실시간 스트리밍합니다.
 
-- **PRD:** `/PRD.md`
+- **PRD:** `/docs/PRD.md`
 - **아키텍처:** `/docs/ARCHITECTURE.md`
 - **개발 워크플로우:** `/docs/DEVELOPMENT.md`
 - **Git 워크플로우:** `/docs/GIT_WORKFLOW.md`
@@ -31,7 +31,7 @@ Faker.js로 가짜 트래픽 데이터를 생성하고, Supabase에 저장한 �
    - type: `feat`, `fix`, `style`, `refactor`, `docs`, `perf`, `chore`, `test`, `ci`
    - scope: `globe`, `stats`, `threat`, `log`, `header`, `matrix-rain`, `realtime`, `generator`, `config`, `deps`
    - subject: 영문 소문자, 명령형, 50자 이내, 마침표 없음
-4. **커밋 전 반드시 `npm run lint && npm run build` 통과 확인**
+4. **커밋 전 반드시 `npm run test && npm run lint && npm run build` 통과 확인**
 5. **`.env.local`, `node_modules/`, `.next/` 절대 커밋 금지**
 6. **`git push --force` (main/dev) 금지** — 작업 브랜치에서만 `--force-with-lease` 허용
 7. **하나의 커밋 = 하나의 논리적 변경** — 기능 추가와 리팩토링을 섞지 않는다
@@ -53,8 +53,8 @@ hotfix/critical-crash      ← 프로덕션 긴급 수정
 ```bash
 git checkout dev && git pull origin dev       # 1. dev 최신화
 git checkout -b feat/xxx                      # 2. 브랜치 생성
-# ... 작업 + 커밋 ...                          # 3. 작업
-npm run lint && npm run build                 # 4. 검증
+# ... 작업 + 테스트 작성 + 커밋 ...             # 3. 작업
+npm run test && npm run lint && npm run build # 4. 검증
 git fetch origin && git rebase origin/dev     # 5. 동기화
 git push origin feat/xxx                      # 6. 푸시
 # GitHub에서 feat/xxx → dev PR 생성            # 7. PR
@@ -96,6 +96,58 @@ npm run generate-traffic
 
 # 린트
 npm run lint
+
+# 테스트
+npm run test              # 전체 테스트 실행
+npm run test:watch        # 워치 모드 (개발 중 사용)
+npm run test:coverage     # 커버리지 리포트
+```
+
+---
+
+## 테스트 규칙 (필수 준수)
+
+### 절대 규칙
+
+1. **새 기능/수정 시 반드시 테스트 코드를 함께 작성한다**
+2. **테스트 없는 코드는 PR 머지 불가**
+3. **모든 테스트 통과 후에만 커밋 가능** (`npm run test`)
+4. **기존 테스트를 깨뜨리는 변경 금지** — 의도적 변경 시 테스트도 함께 수정
+
+### 테스트 스택
+
+| 도구 | 용도 |
+|------|------|
+| Vitest | 테스트 러너 + assertion |
+| @testing-library/react | 컴포넌트 렌더링 + DOM 쿼리 |
+| @testing-library/jest-dom | DOM matcher 확장 (`toBeInTheDocument` 등) |
+| jsdom | 브라우저 환경 시뮬레이션 |
+
+### 테스트 파일 위치
+
+```
+소스 파일                              테스트 파일
+lib/constants.ts                  →   lib/__tests__/constants.test.ts
+lib/traffic-generator.ts          →   lib/__tests__/traffic-generator.test.ts
+hooks/useTrafficStats.ts          →   hooks/__tests__/useTrafficStats.test.ts
+components/ui/CyberPanel.tsx      →   components/__tests__/CyberPanel.test.tsx
+components/dashboard/Header.tsx   →   components/__tests__/Header.test.tsx
+```
+
+- 테스트 파일은 소스와 같은 모듈의 `__tests__/` 디렉토리에 배치
+- 파일명: `<소스파일명>.test.ts` 또는 `.test.tsx`
+
+### 테스트 작성 기준
+
+- **유틸/라이브러리**: 순수 함수 입출력 검증, 엣지 케이스 포함
+- **커스텀 훅**: `renderHook`으로 상태 변화 검증
+- **컴포넌트**: 렌더링 확인, 사용자 인터랙션, 조건부 렌더링
+- **확률 기반 로직**: 충분한 반복(100~1000회)으로 통계적 검증
+
+### 커밋 전 필수 검증 순서
+
+```bash
+npm run test && npm run lint && npm run build
 ```
 
 ---
@@ -104,11 +156,12 @@ npm run lint
 
 ```
 traffic-sight/
-├── PRD.md                      # 제품 요구사항 문서 (루트)
 ├── CLAUDE.md                   # 이 파일
 ├── docs/
+│   ├── PRD.md                  # 제품 요구사항 문서
 │   ├── ARCHITECTURE.md         # 아키텍처 문서
-│   └── DEVELOPMENT.md          # 개발 워크플로우
+│   ├── DEVELOPMENT.md          # 개발 워크플로우
+│   └── GIT_WORKFLOW.md         # Git 워크플로우
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx              # 루트 레이아웃 (JetBrains Mono 폰트)
 │   ├── page.tsx                # 메인 대시보드 ("use client")
@@ -137,6 +190,8 @@ traffic-sight/
 ├── scripts/
 │   ├── generate-traffic.ts     # Faker.js 데이터 생성기
 │   └── schema.sql              # Supabase 테이블 스키마
+├── vitest.config.ts            # Vitest 설정
+├── vitest.setup.ts             # 테스트 환경 설정 (mock 등)
 └── workers/
     └── matrix-rain.worker.ts   # OffscreenCanvas 워커 (선택적)
 ```
@@ -228,16 +283,24 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
 2. `CyberPanel`로 감싸서 사이버 테마 적용
 3. `app/page.tsx`의 그리드 레이아웃에 배치
 4. 필요 시 `useTrafficStats`에 새 통계 필드 추가
+5. **`components/__tests__/NewPanel.test.tsx` 테스트 작성 (필수)**
 
 ### 새 위협 유형 추가
 1. `lib/constants.ts`의 `THREAT_TYPES` 배열에 추가
 2. `scripts/generate-traffic.ts`에서 자동으로 사용됨
+3. **기존 `constants.test.ts` 테스트가 자동으로 검증**
 
 ### 새 도시 추가
 1. `lib/constants.ts`의 `CITIES` 배열에 `{ city, country, countryCode, lat, lng }` 추가
+2. **기존 `constants.test.ts` 테스트가 자동으로 검증**
 
 ### 새 프로토콜 추가
 1. `lib/constants.ts`의 `PROTOCOLS` 배열과 `PROTOCOL_PORTS` 맵에 추가
+2. **기존 `constants.test.ts` 테스트가 자동으로 검증**
+
+### 새 커스텀 훅 추가
+1. `hooks/useNewHook.ts` 작성
+2. **`hooks/__tests__/useNewHook.test.ts` 테스트 작성 (필수)**
 
 ---
 
@@ -251,9 +314,14 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
 
 ---
 
-## 테스트 체크리스트
+## 검증 체크리스트
 
-- [ ] `npm run build` 성공
+### 자동화 테스트
+- [ ] `npm run test` — 전체 84개+ 테스트 통과
+- [ ] `npm run lint` — ESLint 통과
+- [ ] `npm run build` — 프로덕션 빌드 성공
+
+### 수동 검증
 - [ ] `npm run dev`로 로컬 확인 (Globe 렌더링, MatrixRain 동작)
 - [ ] Supabase 연결 후 `npm run generate-traffic` → 실시간 데이터 수신 확인
 - [ ] Chrome DevTools Performance 탭에서 60fps 유지 확인

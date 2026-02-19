@@ -289,8 +289,10 @@ fix(realtime): handle reconnection timeout
 - (왜 이 변경이 필요한지)
 
 ## 테스트
+- [ ] `npm run test` 전체 통과
 - [ ] `npm run build` 성공
 - [ ] `npm run lint` 통과
+- [ ] 새 기능/수정에 대한 테스트 코드 포함
 - [ ] 로컬에서 해당 기능 동작 확인
 - [ ] 기존 기능에 영향 없음 확인
 
@@ -302,8 +304,10 @@ fix(realtime): handle reconnection timeout
 
 | 조건 | 필수 |
 |------|------|
+| 테스트 통과 (`npm run test`) | **필수** |
 | 빌드 성공 (`npm run build`) | **필수** |
 | 린트 통과 (`npm run lint`) | **필수** |
+| 새 기능/수정에 테스트 포함 | **필수** |
 | 1명 이상 리뷰 승인 | 권장 |
 | 충돌 없음 | **필수** |
 | PR 설명 작성 | **필수** |
@@ -358,7 +362,8 @@ git merge origin/dev    ← 작업 브랜치에서 하지 말 것
 | `git reset --hard` (공유 브랜치) | 히스토리 파괴 |
 | `.env.local` 커밋 | 시크릿 노출 |
 | `node_modules/` 커밋 | 불필요한 대용량 파일 |
-| 빌드 깨진 상태로 PR 머지 | dev/main 오염 |
+| 테스트 미작성으로 PR 머지 | 회귀 버그 방지 불가 |
+| 빌드/테스트 깨진 상태로 PR 머지 | dev/main 오염 |
 | 한 커밋에 여러 기능 혼합 | 롤백 불가능 |
 | "WIP" 상태로 PR 머지 | 불완전한 코드 유입 |
 
@@ -401,12 +406,13 @@ git push origin v2.1.0
 
 ## 10. Git Hooks (자동 검증)
 
-### pre-commit: 빌드 + 린트 자동 검증
+### pre-commit: 테스트 + 빌드 + 린트 자동 검증
 
 프로젝트에 다음 스크립트가 설정되어 커밋 전 자동으로 검증합니다:
 
 ```bash
 # .husky/pre-commit (설정 시)
+npm run test
 npm run lint
 npm run build
 ```
@@ -424,8 +430,8 @@ npm run build
 hooks가 설정되지 않은 환경에서는 **커밋 전 반드시 수동으로 확인**:
 
 ```bash
-npm run lint && npm run build
-# 둘 다 통과한 경우에만 커밋
+npm run test && npm run lint && npm run build
+# 세 가지 모두 통과한 경우에만 커밋
 ```
 
 ---
@@ -477,7 +483,7 @@ git push --force-with-lease origin main
  작업 + 커밋 ─────────────── git commit (Conventional Commits)
      │
      ▼
- lint + build 확인 ────────── npm run lint && npm run build
+ test + lint + build ─────── npm run test && npm run lint && npm run build
      │
      ├─ 실패 → 수정 후 재커밋
      │
