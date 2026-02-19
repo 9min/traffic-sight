@@ -72,15 +72,19 @@ export default function MatrixRain() {
     if (!canvas) return;
 
     // Try OffscreenCanvas + Worker path
+    // IMPORTANT: Create Worker BEFORE transferring canvas control.
+    // transferControlToOffscreen() is irreversible — if Worker creation
+    // fails after transfer, the canvas becomes unusable for fallback.
     if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
       try {
+        const worker = new Worker(
+          new URL("../../workers/matrix-rain.worker.ts", import.meta.url)
+        );
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         const offscreen = canvas.transferControlToOffscreen();
-        const worker = new Worker(
-          new URL("../../workers/matrix-rain.worker.ts", import.meta.url)
-        );
 
         worker.postMessage({ type: "init", data: { canvas: offscreen } }, [
           offscreen,
@@ -103,7 +107,7 @@ export default function MatrixRain() {
           workerRef.current = null;
         };
       } catch {
-        // OffscreenCanvas transfer failed, fall through to main-thread fallback
+        // Worker creation failed (before transfer), fall through to main-thread fallback
       }
     }
 
