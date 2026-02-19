@@ -151,6 +151,7 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
           pointAltitude={0.01}
           pointRadius="size"
           pointsMerge={true}
+          enablePointerInteraction={false}
           width={width}
           height={height}
           animateIn={true}
