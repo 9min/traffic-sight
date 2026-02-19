@@ -25,9 +25,33 @@ interface ArcDatum {
   animateTime: number;
 }
 
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ width: 600, height: 500 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setSize({ width: Math.floor(width), height: Math.floor(height) });
+    };
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return size;
+}
+
 export default function GlobeSection({ events }: GlobeSectionProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { width, height } = useContainerSize(containerRef);
 
   useEffect(() => {
     setMounted(true);
@@ -36,7 +60,9 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
   // Auto-rotate
   useEffect(() => {
     if (!globeRef.current) return;
-    const globe = globeRef.current as GlobeMethods & { controls: () => { autoRotate: boolean; autoRotateSpeed: number } };
+    const globe = globeRef.current as GlobeMethods & {
+      controls: () => { autoRotate: boolean; autoRotateSpeed: number };
+    };
     if (globe.controls) {
       const controls = globe.controls();
       if (controls) {
@@ -66,9 +92,11 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
     });
   }, [events]);
 
-  // Point data for city markers
   const pointsData = useMemo(() => {
-    const cities = new Map<string, { lat: number; lng: number; size: number; color: string }>();
+    const cities = new Map<
+      string,
+      { lat: number; lng: number; size: number; color: string }
+    >();
     events.forEach((event) => {
       const srcKey = `${event.src_lat},${event.src_lng}`;
       const dstKey = `${event.dst_lat},${event.dst_lng}`;
@@ -94,42 +122,40 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
     return Array.from(cities.values());
   }, [events]);
 
-  if (!mounted) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-matrix-green/50 text-sm animate-pulse">INITIALIZING GLOBE...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full h-full relative">
-      <Globe
-        ref={globeRef}
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-        backgroundColor="rgba(0,0,0,0)"
-        atmosphereColor="#00ff41"
-        atmosphereAltitude={0.15}
-        arcsData={arcsData}
-        arcColor="color"
-        arcStroke="stroke"
-        arcDashLength="dashLength"
-        arcDashGap="dashGap"
-        arcDashAnimateTime="animateTime"
-        arcAltitudeAutoScale={0.3}
-        pointsData={pointsData}
-        pointLat="lat"
-        pointLng="lng"
-        pointColor="color"
-        pointAltitude={0.01}
-        pointRadius="size"
-        pointsMerge={true}
-        width={typeof window !== "undefined" ? Math.min(window.innerWidth * 0.5, 800) : 600}
-        height={typeof window !== "undefined" ? Math.min(window.innerHeight * 0.6, 600) : 500}
-        animateIn={true}
-      />
-      {/* Glow overlay */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-radial from-matrix-green/5 to-transparent" />
+    <div ref={containerRef} className="w-full h-full relative">
+      {!mounted ? (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-matrix-green/50 text-sm animate-pulse">
+            INITIALIZING GLOBE...
+          </div>
+        </div>
+      ) : (
+        <Globe
+          ref={globeRef}
+          globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
+          backgroundColor="rgba(0,0,0,0)"
+          atmosphereColor="#00ff41"
+          atmosphereAltitude={0.15}
+          arcsData={arcsData}
+          arcColor="color"
+          arcStroke="stroke"
+          arcDashLength="dashLength"
+          arcDashGap="dashGap"
+          arcDashAnimateTime="animateTime"
+          arcAltitudeAutoScale={0.3}
+          pointsData={pointsData}
+          pointLat="lat"
+          pointLng="lng"
+          pointColor="color"
+          pointAltitude={0.01}
+          pointRadius="size"
+          pointsMerge={true}
+          width={width}
+          height={height}
+          animateIn={true}
+        />
+      )}
     </div>
   );
 }
