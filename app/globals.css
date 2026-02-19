@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cyber-bg: #0a0a0f;
+  --color-cyber-bg-light: #12121a;
+  --color-cyber-panel: rgba(0, 0, 0, 0.7);
+  --color-matrix-green: #00ff41;
+  --color-matrix-green-dim: #00cc33;
+  --color-cyber-cyan: #00d4ff;
+  --color-cyber-blue: #0066ff;
+  --color-threat-red: #ff0040;
+  --color-threat-orange: #ff6600;
+  --color-threat-yellow: #ffcc00;
+  --color-neon-purple: #bf00ff;
+
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace,
+    SFMono-Regular, monospace;
+}
+
+/* Global reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: #0a0a0f;
+  color: #00ff41;
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff41;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00cc33;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(0, 255, 65, 0.3);
+  color: #00ff41;
+}
+
+/* Neon glow utilities */
+.neon-glow-green {
+  box-shadow:
+    0 0 5px rgba(0, 255, 65, 0.3),
+    0 0 10px rgba(0, 255, 65, 0.2),
+    0 0 20px rgba(0, 255, 65, 0.1);
+}
+
+.neon-glow-cyan {
+  box-shadow:
+    0 0 5px rgba(0, 212, 255, 0.3),
+    0 0 10px rgba(0, 212, 255, 0.2),
+    0 0 20px rgba(0, 212, 255, 0.1);
+}
+
+.neon-glow-red {
+  box-shadow:
+    0 0 5px rgba(255, 0, 64, 0.3),
+    0 0 10px rgba(255, 0, 64, 0.2),
+    0 0 20px rgba(255, 0, 64, 0.1);
+}
+
+.text-glow-green {
+  text-shadow:
+    0 0 7px rgba(0, 255, 65, 0.6),
+    0 0 14px rgba(0, 255, 65, 0.3);
+}
+
+.text-glow-cyan {
+  text-shadow:
+    0 0 7px rgba(0, 212, 255, 0.6),
+    0 0 14px rgba(0, 212, 255, 0.3);
+}
+
+.text-glow-red {
+  text-shadow:
+    0 0 7px rgba(255, 0, 64, 0.6),
+    0 0 14px rgba(255, 0, 64, 0.3);
+}
+
+/* Cyber border animation */
+@keyframes borderPulse {
+  0%,
+  100% {
+    border-color: rgba(0, 255, 65, 0.3);
+    box-shadow:
+      0 0 5px rgba(0, 255, 65, 0.1),
+      inset 0 0 5px rgba(0, 255, 65, 0.05);
+  }
+  50% {
+    border-color: rgba(0, 255, 65, 0.6);
+    box-shadow:
+      0 0 10px rgba(0, 255, 65, 0.2),
+      inset 0 0 10px rgba(0, 255, 65, 0.1);
+  }
+}
+
+.cyber-border-pulse {
+  animation: borderPulse 3s ease-in-out infinite;
+}
+
+/* Scanline effect */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scanline-effect::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 255, 65, 0.3),
+    transparent
+  );
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Glitch keyframes */
+@keyframes glitch1 {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  20% {
+    clip-path: inset(20% 0 60% 0);
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    clip-path: inset(40% 0 30% 0);
+    transform: translate(2px, -1px);
+  }
+  60% {
+    clip-path: inset(60% 0 10% 0);
+    transform: translate(-1px, 1px);
+  }
+  80% {
+    clip-path: inset(10% 0 80% 0);
+    transform: translate(1px, -2px);
+  }
+}
+
+@keyframes glitch2 {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  20% {
+    clip-path: inset(60% 0 10% 0);
+    transform: translate(2px, -1px);
+  }
+  40% {
+    clip-path: inset(10% 0 70% 0);
+    transform: translate(-1px, 2px);
+  }
+  60% {
+    clip-path: inset(30% 0 40% 0);
+    transform: translate(1px, -1px);
+  }
+  80% {
+    clip-path: inset(70% 0 5% 0);
+    transform: translate(-2px, 1px);
+  }
+}
+
+/* Fade-in animation for panels */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-slide-in {
+  animation: fadeSlideIn 0.6s ease-out forwards;
+}
