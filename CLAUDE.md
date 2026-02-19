@@ -9,7 +9,7 @@
 **Traffic Sight**는 사이버펑크/매트릭스 테마의 실시간 네트워크 트래픽 모니터링 대시보드입니다.
 Faker.js로 가짜 트래픽 데이터를 생성하고, Supabase에 저장한 뒤 Supabase Realtime으로 프론트엔드에 실시간 스트리밍합니다.
 
-- **PRD:** `/PRD.md`
+- **PRD:** `/docs/PRD.md`
 - **아키텍처:** `/docs/ARCHITECTURE.md`
 - **개발 워크플로우:** `/docs/DEVELOPMENT.md`
 - **Git 워크플로우:** `/docs/GIT_WORKFLOW.md`
