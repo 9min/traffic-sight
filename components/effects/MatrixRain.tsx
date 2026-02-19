@@ -71,10 +71,24 @@ export default function MatrixRain() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Worker already running (React Strict Mode re-invocation).
+    // transferControlToOffscreen() is irreversible, so just re-attach
+    // the resize listener and keep the existing worker alive.
+    if (workerRef.current) {
+      const worker = workerRef.current;
+
+      function handleResize() {
+        worker.postMessage({
+          type: "resize",
+          data: { width: window.innerWidth, height: window.innerHeight },
+        });
+      }
+
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+
     // Try OffscreenCanvas + Worker path
-    // IMPORTANT: Create Worker BEFORE transferring canvas control.
-    // transferControlToOffscreen() is irreversible — if Worker creation
-    // fails after transfer, the canvas becomes unusable for fallback.
     if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
       try {
         const worker = new Worker(
@@ -103,11 +117,13 @@ export default function MatrixRain() {
 
         return () => {
           window.removeEventListener("resize", handleResize);
-          worker.terminate();
-          workerRef.current = null;
+          // Do NOT terminate worker or clear ref here.
+          // transferControlToOffscreen() is irreversible — if React
+          // re-runs this effect (Strict Mode), the canvas cannot be
+          // reclaimed for fallback or re-transferred to a new worker.
         };
       } catch {
-        // Worker creation failed (before transfer), fall through to main-thread fallback
+        // Worker or transfer failed, fall through to main-thread fallback
       }
     }
 
