@@ -28,15 +28,3 @@ export interface ArcData {
   stroke: number;
   id: string;
 }
-
-export interface Database {
-  public: {
-    Tables: {
-      traffic_events: {
-        Row: TrafficEvent;
-        Insert: Omit<TrafficEvent, "id" | "created_at">;
-        Update: Partial<Omit<TrafficEvent, "id">>;
-      };
-    };
-  };
-}

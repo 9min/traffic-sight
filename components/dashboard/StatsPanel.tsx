@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import CyberPanel from "@/components/ui/CyberPanel";
 import type { TrafficStats } from "@/hooks/useTrafficStats";
@@ -19,7 +19,7 @@ function AnimatedCounter({ value, label }: { value: number; label: string }) {
 
     const start = prevValue.current;
     const end = value;
-    const duration = 500;
+    const duration = 400;
     const startTime = Date.now();
 
     function animate() {
@@ -55,99 +55,115 @@ function formatBytes(bytes: number): string {
 }
 
 export default function StatsPanel({ stats }: StatsPanelProps) {
-  const protocolData = Object.entries(stats.protocolDistribution)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
+  const protocolData = useMemo(
+    () =>
+      Object.entries(stats.protocolDistribution)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6),
+    [stats.protocolDistribution]
+  );
 
-  const protocolChartOption = {
-    tooltip: {
-      trigger: "item" as const,
-      backgroundColor: "rgba(0,0,0,0.85)",
-      borderColor: "#00ff41",
-      textStyle: { color: "#00ff41", fontFamily: "monospace", fontSize: 11 },
-    },
-    series: [
-      {
-        type: "pie",
-        radius: ["45%", "70%"],
-        center: ["50%", "50%"],
-        data: protocolData.map(([name, value], i) => ({
-          name,
-          value,
-          itemStyle: {
-            color: [
-              "#00ff41",
-              "#00d4ff",
-              "#0066ff",
-              "#bf00ff",
-              "#ff6600",
-              "#ffcc00",
-            ][i],
+  const protocolChartOption = useMemo(
+    () => ({
+      animation: false,
+      animationDurationUpdate: 300,
+      animationEasingUpdate: "cubicInOut",
+      tooltip: {
+        trigger: "item" as const,
+        backgroundColor: "rgba(0,0,0,0.85)",
+        borderColor: "#00ff41",
+        textStyle: { color: "#00ff41", fontFamily: "monospace", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "pie",
+          radius: ["45%", "70%"],
+          center: ["50%", "50%"],
+          data: protocolData.map(([name, value], i) => ({
+            name,
+            value,
+            itemStyle: {
+              color: [
+                "#00ff41",
+                "#00d4ff",
+                "#0066ff",
+                "#bf00ff",
+                "#ff6600",
+                "#ffcc00",
+              ][i],
+            },
+          })),
+          label: {
+            show: true,
+            color: "#00ff41",
+            fontSize: 9,
+            fontFamily: "monospace",
+            formatter: "{b}",
           },
-        })),
-        label: {
-          show: true,
+          labelLine: {
+            lineStyle: { color: "#00ff41", opacity: 0.3 },
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowColor: "rgba(0, 255, 65, 0.5)",
+            },
+          },
+        },
+      ],
+    }),
+    [protocolData]
+  );
+
+  const bandwidthChartOption = useMemo(
+    () => ({
+      animation: false,
+      animationDurationUpdate: 300,
+      animationEasingUpdate: "cubicInOut",
+      grid: { top: 10, right: 10, bottom: 20, left: 40 },
+      xAxis: {
+        type: "category" as const,
+        data: stats.bandwidthHistory.map((_, i) => `${i}`),
+        axisLine: { lineStyle: { color: "#00ff41", opacity: 0.3 } },
+        axisLabel: { show: false },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: "value" as const,
+        axisLine: { lineStyle: { color: "#00ff41", opacity: 0.3 } },
+        axisLabel: {
           color: "#00ff41",
           fontSize: 9,
           fontFamily: "monospace",
-          formatter: "{b}",
+          formatter: (v: number) => formatBytes(v),
         },
-        labelLine: {
-          lineStyle: { color: "#00ff41", opacity: 0.3 },
-        },
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowColor: "rgba(0, 255, 65, 0.5)",
+        splitLine: { lineStyle: { color: "#00ff41", opacity: 0.05 } },
+      },
+      series: [
+        {
+          type: "line",
+          data: stats.bandwidthHistory,
+          smooth: true,
+          symbol: "none",
+          lineStyle: { color: "#00d4ff", width: 2 },
+          areaStyle: {
+            color: {
+              type: "linear" as const,
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: "rgba(0, 212, 255, 0.3)" },
+                { offset: 1, color: "rgba(0, 212, 255, 0)" },
+              ],
+            },
           },
         },
-      },
-    ],
-  };
-
-  const bandwidthChartOption = {
-    grid: { top: 10, right: 10, bottom: 20, left: 40 },
-    xAxis: {
-      type: "category" as const,
-      data: stats.bandwidthHistory.map((_, i) => `${i}`),
-      axisLine: { lineStyle: { color: "#00ff41", opacity: 0.3 } },
-      axisLabel: { show: false },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: "value" as const,
-      axisLine: { lineStyle: { color: "#00ff41", opacity: 0.3 } },
-      axisLabel: {
-        color: "#00ff41",
-        fontSize: 9,
-        fontFamily: "monospace",
-        formatter: (v: number) => formatBytes(v),
-      },
-      splitLine: { lineStyle: { color: "#00ff41", opacity: 0.05 } },
-    },
-    series: [
-      {
-        type: "line",
-        data: stats.bandwidthHistory,
-        smooth: true,
-        symbol: "none",
-        lineStyle: { color: "#00d4ff", width: 2 },
-        areaStyle: {
-          color: {
-            type: "linear" as const,
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: "rgba(0, 212, 255, 0.3)" },
-              { offset: 1, color: "rgba(0, 212, 255, 0)" },
-            ],
-          },
-        },
-      },
-    ],
-  };
+      ],
+    }),
+    [stats.bandwidthHistory]
+  );
 
   // Top countries
   const topCountries = Object.entries(stats.countryDistribution)

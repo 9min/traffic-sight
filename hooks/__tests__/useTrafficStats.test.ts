@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTrafficStats } from "../useTrafficStats";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
+import { BANDWIDTH_BUCKET_COUNT, BANDWIDTH_WINDOW_SEC } from "@/lib/constants";
 
 function makeEvent(overrides: Partial<TrafficEvent> = {}): TrafficEvent {
   return {
@@ -40,7 +41,8 @@ describe("useTrafficStats", () => {
     expect(Object.keys(stats.protocolDistribution)).toHaveLength(0);
     expect(Object.keys(stats.countryDistribution)).toHaveLength(0);
     expect(Object.keys(stats.threatsByType)).toHaveLength(0);
-    expect(stats.bandwidthHistory).toHaveLength(0);
+    expect(stats.bandwidthHistory).toHaveLength(BANDWIDTH_BUCKET_COUNT);
+    expect(stats.bandwidthHistory.every((v) => v === 0)).toBe(true);
   });
 
   it("should count total packets correctly", () => {
@@ -137,27 +139,36 @@ describe("useTrafficStats", () => {
     expect(result.current.threatCount).toBe(1);
   });
 
-  it("should produce bandwidth history buckets", () => {
-    // 20 events → should produce ~10 buckets
-    const events = Array.from({ length: 20 }, (_, i) =>
-      makeEvent({ packet_size: 100 })
-    );
+  it("should produce bandwidth history buckets from time-distributed events", () => {
+    const now = Date.now();
+    // Create events spread across the 30-second window (3 sec per bucket)
+    // Place 2 events in each of the 10 buckets
+    const events: TrafficEvent[] = [];
+    for (let bucket = 0; bucket < BANDWIDTH_BUCKET_COUNT; bucket++) {
+      // Place events in the middle of each bucket
+      const bucketMidMs = now - (BANDWIDTH_WINDOW_SEC * 1000) + (bucket * 3000) + 1500;
+      events.push(makeEvent({ packet_size: 100, created_at: new Date(bucketMidMs).toISOString() }));
+      events.push(makeEvent({ packet_size: 100, created_at: new Date(bucketMidMs + 100).toISOString() }));
+    }
     const { result } = renderHook(() => useTrafficStats(events, []));
 
-    expect(result.current.bandwidthHistory.length).toBeGreaterThan(0);
-    expect(result.current.bandwidthHistory.length).toBeLessThanOrEqual(11);
-
-    // Each bucket should be sum of 2 events = 200
+    expect(result.current.bandwidthHistory).toHaveLength(BANDWIDTH_BUCKET_COUNT);
+    // Each bucket should have 200 bytes (2 events * 100)
     result.current.bandwidthHistory.forEach((b) => {
       expect(b).toBe(200);
     });
   });
 
-  it("should cap packetsPerSecond at 5", () => {
-    const events = Array.from({ length: 50 }, () => makeEvent());
+  it("should calculate packetsPerSecond from 5-second window", () => {
+    const now = Date.now();
+    // 10 events all within the last 5 seconds
+    const events = Array.from({ length: 10 }, (_, i) =>
+      makeEvent({ created_at: new Date(now - i * 400).toISOString() })
+    );
     const { result } = renderHook(() => useTrafficStats(events, []));
 
-    expect(result.current.packetsPerSecond).toBe(5);
+    // 10 events in 5-second window → 10/5 = 2 pkt/sec
+    expect(result.current.packetsPerSecond).toBe(2);
   });
 
   it("should handle single event correctly", () => {
@@ -167,7 +178,45 @@ describe("useTrafficStats", () => {
     expect(result.current.totalPackets).toBe(1);
     expect(result.current.totalBandwidth).toBe(512);
     expect(result.current.protocolDistribution).toEqual({ HTTPS: 1 });
-    expect(result.current.bandwidthHistory).toHaveLength(1);
-    expect(result.current.bandwidthHistory[0]).toBe(512);
+    expect(result.current.bandwidthHistory).toHaveLength(BANDWIDTH_BUCKET_COUNT);
+    // single recent event goes into the last bucket (most recent)
+    const total = result.current.bandwidthHistory.reduce((s, v) => s + v, 0);
+    expect(total).toBe(512);
+    // single event in 5-second window → 1/5 = 0 pkt/sec (rounds down)
+    expect(result.current.packetsPerSecond).toBe(0);
+  });
+
+  it("should exclude events outside the bandwidth window", () => {
+    const now = Date.now();
+    const oldTime = now - (BANDWIDTH_WINDOW_SEC + 5) * 1000; // 5 sec beyond window
+    const events = [
+      makeEvent({ packet_size: 999, created_at: new Date(oldTime).toISOString() }),
+      makeEvent({ packet_size: 100, created_at: new Date(now - 1000).toISOString() }),
+    ];
+    const { result } = renderHook(() => useTrafficStats(events, []));
+
+    // Only the recent event should appear in bandwidth history
+    const total = result.current.bandwidthHistory.reduce((s, v) => s + v, 0);
+    expect(total).toBe(100);
+    // But totalBandwidth includes all events
+    expect(result.current.totalBandwidth).toBe(1099);
+  });
+
+  it("should exclude old events from packetsPerSecond", () => {
+    const now = Date.now();
+    const events = [
+      // 5 events within last 5 seconds
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeEvent({ created_at: new Date(now - i * 500).toISOString() })
+      ),
+      // 5 events older than 5 seconds
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeEvent({ created_at: new Date(now - 10000 - i * 500).toISOString() })
+      ),
+    ];
+    const { result } = renderHook(() => useTrafficStats(events, []));
+
+    // Only 5 recent events in the 5-second window → 5/5 = 1 pkt/sec
+    expect(result.current.packetsPerSecond).toBe(1);
   });
 });

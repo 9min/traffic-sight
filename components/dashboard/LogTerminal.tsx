@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
 
 interface LogTerminalProps {
   events: TrafficEvent[];
