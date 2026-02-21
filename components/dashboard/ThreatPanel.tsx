@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ReactECharts from "echarts-for-react";
 import CyberPanel from "@/components/ui/CyberPanel";
@@ -47,7 +47,7 @@ function ThreatBadge({ level }: { level: number }) {
   );
 }
 
-export default function ThreatPanel({ threats, stats }: ThreatPanelProps) {
+function ThreatPanel({ threats, stats }: ThreatPanelProps) {
   // Threat gauge
   const gaugeValue = Math.min(stats.avgThreatLevel * 20, 100);
   const gaugeColor =
@@ -96,10 +96,13 @@ export default function ThreatPanel({ threats, stats }: ThreatPanelProps) {
     [gaugeValue, gaugeColor]
   );
 
-  // Threat types distribution
-  const threatTypeEntries = Object.entries(stats.threatsByType)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  const threatTypeEntries = useMemo(
+    () =>
+      Object.entries(stats.threatsByType)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+    [stats.threatsByType]
+  );
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-y-auto p-2">
@@ -139,13 +142,13 @@ export default function ThreatPanel({ threats, stats }: ThreatPanelProps) {
       {/* Live Threat Feed */}
       <CyberPanel title="LIVE THREAT FEED" variant="red">
         <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="sync">
             {threats.slice(0, 10).map((threat) => (
               <motion.div
                 key={threat.id}
-                initial={{ opacity: 0, x: 20, height: 0 }}
-                animate={{ opacity: 1, x: 0, height: "auto" }}
-                exit={{ opacity: 0, x: -20, height: 0 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 className="border border-threat-red/20 bg-threat-red/5 px-2 py-1.5 rounded-sm"
               >
@@ -181,3 +184,5 @@ export default function ThreatPanel({ threats, stats }: ThreatPanelProps) {
     </div>
   );
 }
+
+export default memo(ThreatPanel);

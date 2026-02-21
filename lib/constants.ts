@@ -72,10 +72,10 @@ export const THREAT_TYPES = [
 
 export type ThreatType = (typeof THREAT_TYPES)[number];
 
-export const MAX_ARCS = 50;
-export const MAX_LOG_ENTRIES = 50;
-export const MAX_THREAT_ENTRIES = 50;
-export const ROLLING_WINDOW = 200;
+export const MAX_ARCS = 20;
+export const MAX_LOG_ENTRIES = 30;
+export const MAX_THREAT_ENTRIES = 20;
+export const ROLLING_WINDOW = 100;
 
 export const ARC_TTL_MS = 6000;
 export const RING_TTL_MS = 3000;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, memo } from "react";
 import dynamic from "next/dynamic";
 import * as THREE from "three";
 import type { TrafficEvent } from "@/lib/types";
@@ -10,6 +10,7 @@ import type { GlobeMethods } from "react-globe.gl";
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 const MAX_RINGS = 15;
+const POINTS_THROTTLE_MS = 2000;
 
 interface GlobeSectionProps {
   events: TrafficEvent[];
@@ -62,7 +63,7 @@ function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
   return size;
 }
 
-export default function GlobeSection({ events }: GlobeSectionProps) {
+function GlobeSection({ events }: GlobeSectionProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -75,6 +76,12 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
   // Ring TTL lifecycle state
   const [ringsData, setRingsData] = useState<RingDatum[]>([]);
   const ringIdsRef = useRef<Set<string>>(new Set());
+
+  // Points data with 2-second throttle
+  const [pointsData, setPointsData] = useState<
+    { lat: number; lng: number; size: number; color: string }[]
+  >([]);
+  const lastPointsUpdateRef = useRef(0);
 
   useEffect(() => {
     setMounted(true);
@@ -118,7 +125,7 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
     scene.add(pointLight);
   }, []);
 
-  // Add new arcs and rings when events change
+  // Add new arcs and rings when events change — early break on already-seen IDs
   useEffect(() => {
     const now = Date.now();
     let arcsChanged = false;
@@ -127,57 +134,86 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
     const newArcs: ArcDatum[] = [];
     const newRings: RingDatum[] = [];
 
+    // events are newest-first; once we hit an already-tracked ID we can stop
     for (const event of events) {
-      // Add arc if not already tracked
-      if (!arcIdsRef.current.has(event.id)) {
-        if (arcIdsRef.current.size < MAX_ARCS) {
-          arcIdsRef.current.add(event.id);
-          const isThreat = event.threat_level > 0;
-          newArcs.push({
-            startLat: event.src_lat,
-            startLng: event.src_lng,
-            endLat: event.dst_lat,
-            endLng: event.dst_lng,
-            color: isThreat
-              ? ["rgba(255, 0, 64, 0.9)", "rgba(255, 102, 0, 0.6)"] as [string, string]
-              : ["rgba(0, 255, 65, 0.9)", "rgba(0, 212, 255, 0.6)"] as [string, string],
-            stroke: isThreat ? 2.5 : 1.2,
-            id: event.id,
-            dashGap: isThreat ? 0.6 : 1.5,
-            dashLength: isThreat ? 0.8 : 0.4,
-            animateTime: 1000 + Math.random() * 800,
-            createdAt: now,
-          });
-          arcsChanged = true;
-        }
+      if (arcIdsRef.current.has(event.id)) break;
+
+      if (arcIdsRef.current.size + newArcs.length < MAX_ARCS) {
+        const isThreat = event.threat_level > 0;
+        newArcs.push({
+          startLat: event.src_lat,
+          startLng: event.src_lng,
+          endLat: event.dst_lat,
+          endLng: event.dst_lng,
+          color: isThreat
+            ? ["rgba(255, 0, 64, 0.9)", "rgba(255, 102, 0, 0.6)"] as [string, string]
+            : ["rgba(0, 255, 65, 0.9)", "rgba(0, 212, 255, 0.6)"] as [string, string],
+          stroke: isThreat ? 2.5 : 1.2,
+          id: event.id,
+          dashGap: isThreat ? 0.6 : 1.5,
+          dashLength: isThreat ? 0.8 : 0.4,
+          animateTime: 1000 + Math.random() * 800,
+          createdAt: now,
+        });
+        arcsChanged = true;
       }
 
-      // Add ring if not already tracked
       const ringId = `ring-${event.id}`;
-      if (!ringIdsRef.current.has(ringId)) {
-        if (ringIdsRef.current.size < MAX_RINGS) {
-          ringIdsRef.current.add(ringId);
-          const isThreat = event.threat_level > 0;
-          newRings.push({
-            lat: event.dst_lat,
-            lng: event.dst_lng,
-            maxR: isThreat ? 4 : 2,
-            propagationSpeed: isThreat ? 4 : 2,
-            repeatPeriod: isThreat ? 600 : 1200,
-            color: isThreat ? "rgba(255, 0, 64, 0.6)" : "rgba(0, 255, 65, 0.4)",
-            id: ringId,
-            createdAt: now,
-          });
-          ringsChanged = true;
-        }
+      if (ringIdsRef.current.size + newRings.length < MAX_RINGS) {
+        const isThreat = event.threat_level > 0;
+        newRings.push({
+          lat: event.dst_lat,
+          lng: event.dst_lng,
+          maxR: isThreat ? 4 : 2,
+          propagationSpeed: isThreat ? 4 : 2,
+          repeatPeriod: isThreat ? 600 : 1200,
+          color: isThreat ? "rgba(255, 0, 64, 0.6)" : "rgba(0, 255, 65, 0.4)",
+          id: ringId,
+          createdAt: now,
+        });
+        ringsChanged = true;
       }
     }
 
     if (arcsChanged) {
+      for (const arc of newArcs) arcIdsRef.current.add(arc.id);
       setArcsData((prev) => [...prev, ...newArcs]);
     }
     if (ringsChanged) {
+      for (const ring of newRings) ringIdsRef.current.add(ring.id);
       setRingsData((prev) => [...prev, ...newRings]);
+    }
+
+    // Throttled pointsData update (every 2 seconds)
+    if (now - lastPointsUpdateRef.current >= POINTS_THROTTLE_MS) {
+      lastPointsUpdateRef.current = now;
+      const cities = new Map<
+        string,
+        { lat: number; lng: number; size: number; color: string }
+      >();
+      events.forEach((event) => {
+        const srcKey = `${event.src_lat},${event.src_lng}`;
+        const dstKey = `${event.dst_lat},${event.dst_lng}`;
+        const isThreat = event.threat_level > 0;
+
+        if (!cities.has(srcKey)) {
+          cities.set(srcKey, {
+            lat: event.src_lat,
+            lng: event.src_lng,
+            size: isThreat ? 0.7 : 0.5,
+            color: isThreat ? "#ff0040" : "#00ff41",
+          });
+        }
+        if (!cities.has(dstKey)) {
+          cities.set(dstKey, {
+            lat: event.dst_lat,
+            lng: event.dst_lng,
+            size: 0.6,
+            color: "#00d4ff",
+          });
+        }
+      });
+      setPointsData(Array.from(cities.values()));
     }
   }, [events]);
 
@@ -188,11 +224,10 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
 
       setArcsData((prev) => {
         const next = prev.filter((arc) => now - arc.createdAt < ARC_TTL_MS);
-        // Sync the ID set
         const nextIds = new Set(next.map((a) => a.id));
         arcIdsRef.current = nextIds;
         if (next.length !== prev.length) return next;
-        return prev; // no change → skip re-render
+        return prev;
       });
 
       setRingsData((prev) => {
@@ -206,36 +241,6 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
 
     return () => clearInterval(timer);
   }, []);
-
-  const pointsData = useMemo(() => {
-    const cities = new Map<
-      string,
-      { lat: number; lng: number; size: number; color: string }
-    >();
-    events.forEach((event) => {
-      const srcKey = `${event.src_lat},${event.src_lng}`;
-      const dstKey = `${event.dst_lat},${event.dst_lng}`;
-      const isThreat = event.threat_level > 0;
-
-      if (!cities.has(srcKey)) {
-        cities.set(srcKey, {
-          lat: event.src_lat,
-          lng: event.src_lng,
-          size: isThreat ? 0.7 : 0.5,
-          color: isThreat ? "#ff0040" : "#00ff41",
-        });
-      }
-      if (!cities.has(dstKey)) {
-        cities.set(dstKey, {
-          lat: event.dst_lat,
-          lng: event.dst_lng,
-          size: 0.6,
-          color: "#00d4ff",
-        });
-      }
-    });
-    return Array.from(cities.values());
-  }, [events]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -262,7 +267,7 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
           arcDashGap="dashGap"
           arcDashAnimateTime="animateTime"
           arcAltitudeAutoScale={0.45}
-          arcsTransitionDuration={800}
+          arcsTransitionDuration={0}
           ringsData={ringsData}
           ringLat="lat"
           ringLng="lng"
@@ -276,8 +281,8 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
           pointColor="color"
           pointAltitude={0.02}
           pointRadius="size"
-          pointsMerge={false}
-          pointsTransitionDuration={800}
+          pointsMerge={true}
+          pointsTransitionDuration={0}
           enablePointerInteraction={false}
           width={width}
           height={height}
@@ -287,3 +292,5 @@ export default function GlobeSection({ events }: GlobeSectionProps) {
     </div>
   );
 }
+
+export default memo(GlobeSection);

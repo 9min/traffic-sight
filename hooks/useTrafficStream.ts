@@ -4,8 +4,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { generateTrafficEvent } from "@/lib/traffic-generator";
 import type { TrafficEvent } from "@/lib/types";
 import { ROLLING_WINDOW, MAX_THREAT_ENTRIES } from "@/lib/constants";
+import { EventBuffer } from "@/lib/event-buffer";
 
-export const GENERATION_INTERVAL_MS = 100;
+export const GENERATION_INTERVAL_MS = 300;
+export const FLUSH_INTERVAL_MS = 500;
 
 export function useTrafficStream() {
   const [events, setEvents] = useState<TrafficEvent[]>([]);
@@ -13,17 +15,8 @@ export function useTrafficStream() {
   const [isConnected, setIsConnected] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
 
-  // RAF-based micro-batching: collect events arriving within the same
-  // animation frame and flush them together, so updates stay in sync
-  // with the browser's paint cycle instead of a fixed timer.
-  const pendingRef = useRef<TrafficEvent[]>([]);
-  const rafRef = useRef<number | null>(null);
-
-  const flushPending = useCallback(() => {
-    rafRef.current = null;
-    const batch = pendingRef.current;
+  const flushPending = useCallback((batch: TrafficEvent[]) => {
     if (batch.length === 0) return;
-    pendingRef.current = [];
 
     setEvents((prev) => [...batch, ...prev].slice(0, ROLLING_WINDOW));
     setTotalCount((prev) => prev + batch.length);
@@ -34,17 +27,14 @@ export function useTrafficStream() {
     }
   }, []);
 
-  // Clean up RAF on unmount
-  useEffect(() => {
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, []);
+  const bufferRef = useRef<EventBuffer<TrafficEvent> | null>(null);
 
   useEffect(() => {
     setIsConnected(true);
+
+    const buffer = new EventBuffer<TrafficEvent>(flushPending, FLUSH_INTERVAL_MS);
+    bufferRef.current = buffer;
+    buffer.start();
 
     const interval = setInterval(() => {
       const raw = generateTrafficEvent();
@@ -53,18 +43,13 @@ export function useTrafficStream() {
         id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
       };
-      pendingRef.current.push(event);
-      if (rafRef.current === null) {
-        rafRef.current = requestAnimationFrame(flushPending);
-      }
+      buffer.push(event);
     }, GENERATION_INTERVAL_MS);
 
     return () => {
       clearInterval(interval);
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
+      buffer.stop();
+      bufferRef.current = null;
     };
   }, [flushPending]);
 

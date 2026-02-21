@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import GlitchText from "@/components/effects/GlitchText";
 
 interface HeaderProps {
@@ -42,7 +42,7 @@ function useAnimatedCounter(value: number, duration = 400) {
   return ref;
 }
 
-export default function Header({ isConnected, totalCount }: HeaderProps) {
+function Header({ isConnected, totalCount }: HeaderProps) {
   const [time, setTime] = useState("");
   const counterRef = useAnimatedCounter(totalCount);
 
@@ -123,3 +123,5 @@ export default function Header({ isConnected, totalCount }: HeaderProps) {
     </header>
   );
 }
+
+export default memo(Header);

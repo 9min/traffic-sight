@@ -31,24 +31,27 @@ vi.mock("@/lib/traffic-generator", () => ({
   generateTrafficEvent: vi.fn(() => ({ ...mockEvent })),
 }));
 
-import { useTrafficStream, GENERATION_INTERVAL_MS } from "../useTrafficStream";
+import {
+  useTrafficStream,
+  GENERATION_INTERVAL_MS,
+  FLUSH_INTERVAL_MS,
+} from "../useTrafficStream";
 import { generateTrafficEvent } from "@/lib/traffic-generator";
 
 const mockedGenerate = vi.mocked(generateTrafficEvent);
 
 /**
- * Advance timers by the given number of interval ticks, then flush all
- * pending timers (including RAF polyfill which uses setTimeout(cb, 0)).
+ * Advance timers to generate `ticks` events, then flush the EventBuffer.
+ * Generation happens every GENERATION_INTERVAL_MS; flush every FLUSH_INTERVAL_MS.
  */
 function advanceAndFlush(ticks: number) {
-  // Advance through the interval ticks to queue events
+  // Advance through generation ticks to queue events
   act(() => {
     vi.advanceTimersByTime(GENERATION_INTERVAL_MS * ticks);
   });
-  // Flush the RAF polyfill (setTimeout(cb, 0)) and any React batched updates
+  // Advance past the flush interval so EventBuffer fires
   act(() => {
-    vi.runAllTicks();
-    vi.advanceTimersByTime(1);
+    vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
   });
 }
 
@@ -108,16 +111,16 @@ describe("useTrafficStream", () => {
   it("should cap events at ROLLING_WINDOW", () => {
     const { result } = renderHook(() => useTrafficStream());
 
-    // Generate well over ROLLING_WINDOW events in smaller batches
-    // to ensure RAF flushes happen periodically
-    for (let i = 0; i < ROLLING_WINDOW + 20; i++) {
+    // Generate well over ROLLING_WINDOW events, flushing periodically
+    const totalNeeded = ROLLING_WINDOW + 20;
+    const ticksPerFlush = Math.ceil(FLUSH_INTERVAL_MS / GENERATION_INTERVAL_MS);
+    const flushCycles = Math.ceil(totalNeeded / ticksPerFlush) + 1;
+
+    for (let i = 0; i < flushCycles; i++) {
       act(() => {
-        vi.advanceTimersByTime(GENERATION_INTERVAL_MS);
+        vi.advanceTimersByTime(FLUSH_INTERVAL_MS + GENERATION_INTERVAL_MS);
       });
     }
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
 
     expect(result.current.events.length).toBeLessThanOrEqual(ROLLING_WINDOW);
   });
@@ -148,14 +151,15 @@ describe("useTrafficStream", () => {
 
     const { result } = renderHook(() => useTrafficStream());
 
-    for (let i = 0; i < MAX_THREAT_ENTRIES + 20; i++) {
+    const totalNeeded = MAX_THREAT_ENTRIES + 20;
+    const ticksPerFlush = Math.ceil(FLUSH_INTERVAL_MS / GENERATION_INTERVAL_MS);
+    const flushCycles = Math.ceil(totalNeeded / ticksPerFlush) + 1;
+
+    for (let i = 0; i < flushCycles; i++) {
       act(() => {
-        vi.advanceTimersByTime(GENERATION_INTERVAL_MS);
+        vi.advanceTimersByTime(FLUSH_INTERVAL_MS + GENERATION_INTERVAL_MS);
       });
     }
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
 
     expect(result.current.threats.length).toBeLessThanOrEqual(MAX_THREAT_ENTRIES);
   });
