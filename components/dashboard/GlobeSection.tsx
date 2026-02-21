@@ -243,7 +243,7 @@ function GlobeSection({ events }: GlobeSectionProps) {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <div ref={containerRef} className="w-full h-full relative globe-grab">
       <div className="globe-vignette" />
       {!mounted ? (
         <div className="w-full h-full flex items-center justify-center">
