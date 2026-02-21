@@ -8,15 +8,13 @@
 
 1. [사전 요구사항](#1-사전-요구사항)
 2. [초기 셋업](#2-초기-셋업)
-3. [Supabase 설정](#3-supabase-설정)
-4. [로컬 개발](#4-로컬-개발)
-5. [데이터 생성기 실행](#5-데이터-생성기-실행)
-6. [테스트](#6-테스트)
-7. [빌드 및 배포](#7-빌드-및-배포)
-8. [트러블슈팅](#8-트러블슈팅)
-9. [개발 규칙](#9-개발-규칙)
-10. [브랜치 전략](#10-브랜치-전략)
-11. [코드 리뷰 체크리스트](#11-코드-리뷰-체크리스트)
+3. [로컬 개발](#3-로컬-개발)
+4. [테스트](#4-테스트)
+5. [빌드 및 배포](#5-빌드-및-배포)
+6. [트러블슈팅](#6-트러블슈팅)
+7. [개발 규칙](#7-개발-규칙)
+8. [Git 워크플로우](#8-git-워크플로우)
+9. [코드 리뷰 체크리스트](#9-코드-리뷰-체크리스트)
 
 ---
 
@@ -29,8 +27,9 @@
 | Git | 2.x | `git -v` |
 
 추가로 필요:
-- **Supabase 계정** (무료 플랜 가능): https://supabase.com
 - **Vercel 계정** (배포 시): https://vercel.com
+
+> **참고:** 외부 서비스(Supabase 등)는 필요하지 않습니다. 모든 트래픽 데이터는 클라이언트 측에서 Faker.js로 생성됩니다.
 
 ---
 
@@ -44,91 +43,13 @@ cd traffic-sight
 npm install
 ```
 
-### 2.2 환경 변수 설정
-
-`.env.local` 파일을 편집하여 Supabase 자격증명을 입력합니다:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
-```
-
-> **주의:** `NEXT_PUBLIC_SUPABASE_URL`은 반드시 `https://`로 시작하는 유효한 URL이어야 합니다.
-> 빌드 시 Supabase 클라이언트가 URL을 검증합니다.
-
-### 2.3 자격증명 확인 위치
-
-Supabase Dashboard → Settings → API:
-- **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-- **anon public** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **service_role** → `SUPABASE_SERVICE_ROLE_KEY`
+별도의 환경 변수 설정이 필요하지 않습니다. 설치 후 바로 개발 서버를 실행할 수 있습니다.
 
 ---
 
-## 3. Supabase 설정
+## 3. 로컬 개발
 
-### 3.1 데이터베이스 스키마 생성
-
-Supabase Dashboard → SQL Editor에서 `scripts/schema.sql` 내용을 실행합니다:
-
-```sql
-CREATE TABLE traffic_events (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-  src_ip INET NOT NULL,
-  src_country_code CHAR(2) NOT NULL,
-  src_city VARCHAR(100),
-  src_lat DOUBLE PRECISION NOT NULL,
-  src_lng DOUBLE PRECISION NOT NULL,
-  dst_ip INET NOT NULL,
-  dst_country_code CHAR(2) NOT NULL,
-  dst_city VARCHAR(100),
-  dst_lat DOUBLE PRECISION NOT NULL,
-  dst_lng DOUBLE PRECISION NOT NULL,
-  protocol VARCHAR(10) NOT NULL,
-  port INTEGER,
-  packet_size INTEGER NOT NULL,
-  threat_level SMALLINT DEFAULT 0,
-  threat_type VARCHAR(50),
-  status VARCHAR(20) DEFAULT 'active'
-);
-
-CREATE INDEX idx_traffic_created_at ON traffic_events (created_at DESC);
-CREATE INDEX idx_traffic_threat ON traffic_events (threat_level) WHERE threat_level > 0;
-```
-
-### 3.2 Realtime 활성화
-
-1. Supabase Dashboard → **Database** → **Replication**
-2. **Source** 섹션에서 `traffic_events` 테이블의 토글을 **ON**
-3. 또는 SQL Editor에서:
-
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE traffic_events;
-```
-
-### 3.3 RLS (Row Level Security) 설정
-
-개발 환경에서 간편하게 사용하려면:
-
-```sql
-ALTER TABLE traffic_events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow public read" ON traffic_events
-  FOR SELECT USING (true);
-
-CREATE POLICY "Allow service insert" ON traffic_events
-  FOR INSERT WITH CHECK (true);
-```
-
-> **프로덕션 주의:** 위 정책은 개발용입니다. 프로덕션에서는 적절한 인증 정책을 적용하세요.
-
----
-
-## 4. 로컬 개발
-
-### 4.1 개발 서버 시작
+### 3.1 개발 서버 시작
 
 ```bash
 npm run dev
@@ -136,66 +57,37 @@ npm run dev
 
 Turbopack이 활성화된 상태로 `http://localhost:3000`에서 실행됩니다.
 
-### 4.2 개발 중 확인 사항
+### 3.2 데이터 생성 방식
+
+트래픽 데이터는 외부 서버 없이 클라이언트 측에서 자동으로 생성됩니다:
+
+- **`lib/traffic-generator.ts`**: Faker.js를 사용하여 가짜 트래픽 이벤트를 생성
+- **`lib/event-buffer.ts`**: `EventBuffer` 클래스가 이벤트를 배치(batch)로 모아 일정 간격으로 플러시
+- **`hooks/useTrafficStream.ts`**: 300ms마다 이벤트를 생성하고, 500ms 간격으로 EventBuffer를 통해 상태 업데이트
+
+별도의 데이터 생성기 스크립트를 실행할 필요가 없습니다. 페이지 로드 시 자동으로 데이터가 생성됩니다.
+
+### 3.3 개발 중 확인 사항
 
 | 항목 | 확인 방법 |
 |------|----------|
-| Matrix Rain 배경 | 페이지 로드 시 녹색 문자 낙하 애니메이션 |
+| Boot Sequence | 페이지 최초 로드 시 사이버 부팅 애니메이션 |
+| Matrix Rain 배경 | 부팅 완료 후 녹색 문자 낙하 애니메이션 |
 | Globe 렌더링 | 중앙에 3D 지구본 표시 + 자동 회전 |
 | 헤더 글리치 | "TRAFFIC SIGHT" 텍스트에 주기적 글리치 효과 |
-| 연결 상태 | Supabase 연결 시 헤더에 녹색 "CONNECTED" |
-| 실시간 데이터 | 생성기 실행 시 아크, 로그, 차트 실시간 업데이트 |
+| 실시간 데이터 | 아크, 로그, 차트가 자동으로 실시간 업데이트 |
+| 모바일 탭 내비게이션 | 모바일 뷰에서 하단 탭 내비게이션 동작 확인 |
 
-### 4.3 핫 리로드
+### 3.4 핫 리로드
 
 Turbopack이 파일 변경을 감지하여 자동으로 리로드합니다.
 단, `next.config.ts` 변경 시에는 서버를 재시작해야 합니다.
 
 ---
 
-## 5. 데이터 생성기 실행
+## 4. 테스트
 
-### 5.1 기본 실행
-
-```bash
-npm run generate-traffic
-```
-
-- 초당 2~5개의 트래픽 이벤트를 생성합니다
-- 약 15%의 이벤트에 위협 정보가 포함됩니다
-- `Ctrl+C`로 중지합니다
-
-### 5.2 출력 예시
-
-```
-🚀 Traffic Sight - Data Generator
-================================
-📡 Supabase URL: https://your-project.supabase.co
-⏳ Generating traffic events...
-
-Press Ctrl+C to stop
-
-[14:32:01] ✅ Inserted 3 events (Total: 3)
-[14:32:02] ✅ Inserted 5 events (Total: 8)
-[14:32:03] ✅ Inserted 2 events (Total: 10)
-```
-
-### 5.3 데이터 확인
-
-- **Supabase Dashboard** → Table Editor → `traffic_events` 테이블에서 데이터 확인
-- **브라우저 콘솔** → Supabase Realtime 이벤트 수신 로그 확인
-
-### 5.4 테이블 초기화 (필요 시)
-
-```sql
-TRUNCATE TABLE traffic_events;
-```
-
----
-
-## 6. 테스트
-
-### 6.1 테스트 스택
+### 4.1 테스트 스택
 
 | 도구 | 용도 |
 |------|------|
@@ -204,7 +96,7 @@ TRUNCATE TABLE traffic_events;
 | **@testing-library/jest-dom** | DOM matcher 확장 |
 | **jsdom** | 브라우저 환경 시뮬레이션 |
 
-### 6.2 테스트 실행
+### 4.2 테스트 실행
 
 ```bash
 # 전체 테스트 실행
@@ -217,7 +109,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-### 6.3 테스트 파일 구조
+### 4.3 테스트 파일 구조
 
 테스트 파일은 소스와 같은 모듈의 `__tests__/` 디렉토리에 배치합니다:
 
@@ -225,14 +117,18 @@ npm run test:coverage
 lib/
 ├── constants.ts
 ├── traffic-generator.ts
+├── event-buffer.ts
 └── __tests__/
     ├── constants.test.ts
-    └── traffic-generator.test.ts
+    ├── traffic-generator.test.ts
+    └── event-buffer.test.ts
 
 hooks/
 ├── useTrafficStats.ts
+├── useTrafficStream.ts
 └── __tests__/
-    └── useTrafficStats.test.ts
+    ├── useTrafficStats.test.ts
+    └── useTrafficStream.test.ts
 
 components/
 ├── dashboard/
@@ -251,18 +147,19 @@ components/
     └── MobileNav.test.tsx
 ```
 
-### 6.4 테스트 작성 규칙
+### 4.4 테스트 작성 규칙
 
 > **새로운 기능이나 버그 수정 시 반드시 테스트를 함께 작성해야 합니다.**
 
 | 대상 | 테스트 방법 | 예시 |
 |------|-----------|------|
 | 순수 함수/유틸 | 입출력 검증, 엣지 케이스 | `constants.test.ts` |
-| 커스텀 훅 | `renderHook`으로 상태 변화 검증 | `useTrafficStats.test.ts` |
+| 커스텀 훅 | `renderHook`으로 상태 변화 검증 | `useTrafficStats.test.ts`, `useTrafficStream.test.ts` |
 | 컴포넌트 | 렌더링, 인터랙션, 조건부 렌더링 | `CyberPanel.test.tsx` |
 | 확률 로직 | 100~1000회 반복 통계 검증 | `traffic-generator.test.ts` |
+| 버퍼/배치 | 타이밍 기반 플러시 동작 검증 | `event-buffer.test.ts` |
 
-### 6.5 테스트 환경 설정
+### 4.5 테스트 환경 설정
 
 `vitest.setup.ts`에 브라우저 API 모킹이 설정되어 있습니다:
 
@@ -270,7 +167,7 @@ components/
 - **requestAnimationFrame** — MatrixRain 캔버스 애니메이션
 - **matchMedia** — 반응형 미디어 쿼리
 
-### 6.6 커밋 전 필수 검증
+### 4.6 커밋 전 필수 검증
 
 ```bash
 npm run test && npm run lint && npm run build
@@ -279,9 +176,9 @@ npm run test && npm run lint && npm run build
 
 ---
 
-## 7. 빌드 및 배포
+## 5. 빌드 및 배포
 
-### 7.1 프로덕션 빌드
+### 5.1 프로덕션 빌드
 
 ```bash
 npm run build
@@ -294,13 +191,13 @@ Route (app)                                 Size  First Load JS
 └ ○ /_not-found                            995 B         103 kB
 ```
 
-### 7.2 로컬 프로덕션 테스트
+### 5.2 로컬 프로덕션 테스트
 
 ```bash
 npm run build && npm start
 ```
 
-### 7.3 Vercel 배포
+### 5.3 Vercel 배포
 
 #### CLI 배포
 ```bash
@@ -309,31 +206,13 @@ npx vercel --prod
 
 #### GitHub 연동 자동 배포
 1. Vercel Dashboard에서 GitHub 저장소 연결
-2. **Environment Variables**에 3개 환경 변수 추가
-3. `main` 브랜치 push 시 자동 배포
+2. `main` 브랜치 push 시 자동 배포
 
-#### Vercel 환경 변수 설정
-
-| 변수 | Environments |
-|------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview, Development |
-| `SUPABASE_SERVICE_ROLE_KEY` | Production (선택적) |
-
-### 7.4 데이터 생성기 운영
-
-데이터 생성기는 프론트엔드와 별도로 실행해야 합니다:
-
-| 방법 | 설명 |
-|------|------|
-| **로컬 실행** | `npm run generate-traffic` (개발/데모) |
-| **서버 실행** | PM2, systemd 등으로 데몬화 |
-| **Supabase Edge Function** | 서버리스로 주기적 실행 |
-| **GitHub Actions** | cron 스케줄로 주기적 실행 |
+> **참고:** 별도의 환경 변수 설정이 필요하지 않습니다. 모든 데이터가 클라이언트 측에서 생성되므로 배포 후 바로 동작합니다.
 
 ---
 
-## 8. 트러블슈팅
+## 6. 트러블슈팅
 
 ### three.js 모듈 해석 오류
 
@@ -347,17 +226,6 @@ Module not found: Can't resolve 'three/tsl'
 - `three@0.180.0` 설치 확인: `npm ls three`
 - `next.config.ts`의 webpack alias 확인
 
-### Supabase URL 오류
-
-**증상:**
-```
-Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
-```
-
-**해결:**
-- `.env.local`의 `NEXT_PUBLIC_SUPABASE_URL`이 `https://`로 시작하는지 확인
-- 플레이스홀더도 유효한 URL 형식이어야 함
-
 ### Globe가 렌더링되지 않음
 
 **해결:**
@@ -365,31 +233,23 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 - `GlobeSection.tsx`가 `dynamic import + ssr: false`로 로드되는지 확인
 - Three.js 버전이 0.180.0인지 확인
 
-### Realtime 이벤트 수신 안 됨
-
-**해결:**
-1. Supabase Dashboard → Database → Replication에서 `traffic_events` 활성화 확인
-2. `.env.local`의 Supabase 키가 올바른지 확인
-3. 브라우저 콘솔에서 WebSocket 연결 상태 확인
-4. RLS 정책이 SELECT를 허용하는지 확인
-
 ### 빌드 시 정적 프리렌더링 오류
 
 **증상:** 빌드 중 `/` 페이지 프리렌더링 실패
 
 **해결:**
-- `.env.local`의 Supabase URL이 유효한 `https://` URL인지 확인
-- Supabase 클라이언트가 빌드 시에도 초기화되므로 URL 형식이 중요
+- `page.tsx`가 `"use client"` 디렉티브를 사용하는지 확인
+- Globe 컴포넌트가 `dynamic import + ssr: false`로 로드되는지 확인
 
 ---
 
-## 9. 개발 규칙
+## 7. 개발 규칙
 
 ### 파일 생성 규칙
 
 - 새 컴포넌트는 해당 디렉토리에 생성 (dashboard/, effects/, ui/)
 - 클라이언트 컴포넌트는 반드시 `"use client"` 디렉티브 추가
-- 타입은 `lib/supabase/types.ts`에 중앙 관리
+- 타입은 `lib/types.ts`에 중앙 관리
 - 상수는 `lib/constants.ts`에 중앙 관리
 
 ### 스타일 규칙
@@ -401,16 +261,18 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 
 ### 성능 규칙
 
+- 대시보드 컴포넌트에 `React.memo` 적용하여 불필요한 리렌더링 방지
+- `EventBuffer`를 활용하여 이벤트를 배치(batch)로 모아 상태 업데이트 횟수 최소화
 - ECharts에 반드시 `lazyUpdate: true` 적용
 - 대량 데이터는 롤링 윈도우로 제한 (`lib/constants.ts`의 상수 활용)
 - `useMemo`/`useCallback`으로 불필요한 재계산 방지
-- Globe 아크는 최대 30개로 제한
+- Globe 아크는 최대 20개로 제한
 
 ---
 
-## 10. Git 워크플로우
+## 8. Git 워크플로우
 
-> **⚠ 모든 Git 사용 규칙은 `/docs/GIT_WORKFLOW.md` 문서를 반드시 따라야 합니다.**
+> **모든 Git 사용 규칙은 `/docs/GIT_WORKFLOW.md` 문서를 반드시 따라야 합니다.**
 
 자세한 내용은 → **[GIT_WORKFLOW.md](./GIT_WORKFLOW.md)** 참조
 
@@ -425,7 +287,7 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 
 ---
 
-## 11. 코드 리뷰 체크리스트
+## 9. 코드 리뷰 체크리스트
 
 ### Git 규칙
 - [ ] 올바른 브랜치에서 분기했는가? (dev 또는 main)
@@ -439,21 +301,21 @@ Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
 - [ ] 기존 기능에 영향이 없는가?
 
 ### 성능
-- [ ] 불필요한 리렌더링이 없는가?
+- [ ] 불필요한 리렌더링이 없는가? (`React.memo` 적용 확인)
 - [ ] 대용량 데이터 처리 시 메모리 누수가 없는가?
+- [ ] EventBuffer 배치 처리가 적절한가?
 - [ ] 애니메이션이 60fps를 유지하는가?
 
 ### 코드 품질
-- [ ] TypeScript 타입이 정확한가?
+- [ ] TypeScript 타입이 정확한가? (`lib/types.ts` 활용)
 - [ ] `"use client"` 디렉티브가 적절한가?
 - [ ] 사이버 테마 컨벤션을 따르는가?
 
 ### 테스트
 - [ ] 새 기능/수정에 대한 테스트가 작성되었는가?
-- [ ] `npm run test`가 전체 통과하는가?
+- [ ] `npm run test`가 전체 112개+ 테스트 통과하는가?
 - [ ] 기존 테스트를 깨뜨리지 않았는가?
 
 ### 빌드
 - [ ] `npm run build`가 성공하는가?
 - [ ] `npm run lint`가 통과하는가?
-- [ ] Supabase 연결 없이도 빌드가 되는가?
