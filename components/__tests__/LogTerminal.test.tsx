@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import LogTerminal from "../dashboard/LogTerminal";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
 
 function makeEvent(overrides: Partial<TrafficEvent> = {}): TrafficEvent {
   return {

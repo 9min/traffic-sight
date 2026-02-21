@@ -10,7 +10,7 @@ interface BootSequenceProps {
 const BOOT_LINES = [
   { text: "> INITIALIZING TRAFFIC SIGHT v2.0.4...", delay: 0 },
   { text: "> LOADING KERNEL MODULES...", delay: 300 },
-  { text: "> CONNECTING TO SUPABASE REALTIME...", delay: 600 },
+  { text: "> CONNECTING TO TRAFFIC STREAM...", delay: 600 },
   { text: "> INITIALIZING 3D GLOBE RENDERER...", delay: 900 },
   { text: "> ACTIVATING THREAT DETECTION ENGINE...", delay: 1200 },
   { text: "> ALL SYSTEMS OPERATIONAL", delay: 1500 },

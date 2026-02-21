@@ -4,7 +4,7 @@ import { useState } from "react";
 import StatsPanel from "./StatsPanel";
 import ThreatPanel from "./ThreatPanel";
 import type { TrafficStats } from "@/hooks/useTrafficStats";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
 
 type Tab = "globe" | "stats" | "threats";
 
