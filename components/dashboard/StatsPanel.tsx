@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, memo } from "react";
 import ReactECharts from "echarts-for-react";
 import CyberPanel from "@/components/ui/CyberPanel";
 import type { TrafficStats } from "@/hooks/useTrafficStats";
@@ -22,6 +22,7 @@ function AnimatedCounter({ value, label }: { value: number; label: string }) {
     const duration = 400;
     const startTime = Date.now();
 
+    let frameId: number;
     function animate() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -30,12 +31,14 @@ function AnimatedCounter({ value, label }: { value: number; label: string }) {
       el!.textContent = current.toLocaleString();
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        frameId = requestAnimationFrame(animate);
       }
     }
 
     animate();
     prevValue.current = value;
+
+    return () => cancelAnimationFrame(frameId);
   }, [value]);
 
   return (
@@ -54,7 +57,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
-export default function StatsPanel({ stats }: StatsPanelProps) {
+function StatsPanel({ stats }: StatsPanelProps) {
   const protocolData = useMemo(
     () =>
       Object.entries(stats.protocolDistribution)
@@ -165,10 +168,13 @@ export default function StatsPanel({ stats }: StatsPanelProps) {
     [stats.bandwidthHistory]
   );
 
-  // Top countries
-  const topCountries = Object.entries(stats.countryDistribution)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  const topCountries = useMemo(
+    () =>
+      Object.entries(stats.countryDistribution)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+    [stats.countryDistribution]
+  );
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-y-auto p-2">
@@ -250,3 +256,5 @@ export default function StatsPanel({ stats }: StatsPanelProps) {
     </div>
   );
 }
+
+export default memo(StatsPanel);

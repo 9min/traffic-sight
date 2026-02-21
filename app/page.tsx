@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import { useTrafficStream } from "@/hooks/useTrafficStream";
 import { useTrafficStats } from "@/hooks/useTrafficStats";
@@ -46,7 +46,10 @@ export default function DashboardPage() {
 
   const handleBootComplete = useCallback(() => setBooted(true), []);
 
-  const globe = <GlobeSection events={events} />;
+  const globe = useMemo(
+    () => <GlobeSection events={events} />,
+    [events]
+  );
 
   return (
     <div className="relative min-h-screen flex flex-col bg-cyber-bg overflow-hidden">
