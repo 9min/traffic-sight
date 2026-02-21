@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GlitchText from "@/components/effects/GlitchText";
 
 interface HeaderProps {
@@ -8,8 +8,43 @@ interface HeaderProps {
   totalCount: number;
 }
 
+function useAnimatedCounter(value: number, duration = 400) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const prevValue = useRef(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const start = prevValue.current;
+    const end = value;
+    const startTime = Date.now();
+
+    let frameId: number;
+    function animate() {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(start + (end - start) * eased);
+      el!.textContent = current.toLocaleString();
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    }
+
+    animate();
+    prevValue.current = value;
+
+    return () => cancelAnimationFrame(frameId);
+  }, [value, duration]);
+
+  return ref;
+}
+
 export default function Header({ isConnected, totalCount }: HeaderProps) {
   const [time, setTime] = useState("");
+  const counterRef = useAnimatedCounter(totalCount);
 
   useEffect(() => {
     function updateTime() {
@@ -57,8 +92,8 @@ export default function Header({ isConnected, totalCount }: HeaderProps) {
       <div className="hidden lg:flex items-center gap-6 text-xs">
         <div className="flex items-center gap-2">
           <span className="text-matrix-green/50 uppercase tracking-wider">Events</span>
-          <span className="text-matrix-green font-bold text-glow-green tabular-nums">
-            {totalCount.toLocaleString()}
+          <span ref={counterRef} className="text-matrix-green font-bold text-glow-green tabular-nums">
+            0
           </span>
         </div>
       </div>

@@ -1,9 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ReactECharts from "echarts-for-react";
 import CyberPanel from "@/components/ui/CyberPanel";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
 import type { TrafficStats } from "@/hooks/useTrafficStats";
 
 interface ThreatPanelProps {
@@ -52,42 +53,48 @@ export default function ThreatPanel({ threats, stats }: ThreatPanelProps) {
   const gaugeColor =
     gaugeValue < 30 ? "#00ff41" : gaugeValue < 60 ? "#ffcc00" : "#ff0040";
 
-  const gaugeOption = {
-    series: [
-      {
-        type: "gauge",
-        startAngle: 220,
-        endAngle: -40,
-        min: 0,
-        max: 100,
-        pointer: { show: false },
-        progress: {
-          show: true,
-          width: 10,
-          roundCap: true,
-          itemStyle: { color: gaugeColor },
-        },
-        axisLine: {
-          lineStyle: {
+  const gaugeOption = useMemo(
+    () => ({
+      animation: false,
+      series: [
+        {
+          type: "gauge",
+          animationDurationUpdate: 300,
+          animationEasingUpdate: "cubicInOut",
+          startAngle: 220,
+          endAngle: -40,
+          min: 0,
+          max: 100,
+          pointer: { show: false },
+          progress: {
+            show: true,
             width: 10,
-            color: [[1, "rgba(0, 255, 65, 0.1)"]],
+            roundCap: true,
+            itemStyle: { color: gaugeColor },
           },
+          axisLine: {
+            lineStyle: {
+              width: 10,
+              color: [[1, "rgba(0, 255, 65, 0.1)"]],
+            },
+          },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { show: false },
+          detail: {
+            offsetCenter: [0, "0%"],
+            fontSize: 20,
+            fontWeight: "bold" as const,
+            fontFamily: "monospace",
+            color: gaugeColor,
+            formatter: `${Math.round(gaugeValue)}%`,
+          },
+          data: [{ value: gaugeValue }],
         },
-        axisTick: { show: false },
-        splitLine: { show: false },
-        axisLabel: { show: false },
-        detail: {
-          offsetCenter: [0, "0%"],
-          fontSize: 20,
-          fontWeight: "bold" as const,
-          fontFamily: "monospace",
-          color: gaugeColor,
-          formatter: `${Math.round(gaugeValue)}%`,
-        },
-        data: [{ value: gaugeValue }],
-      },
-    ],
-  };
+      ],
+    }),
+    [gaugeValue, gaugeColor]
+  );
 
   // Threat types distribution
   const threatTypeEntries = Object.entries(stats.threatsByType)

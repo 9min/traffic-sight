@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import type { TrafficEvent } from "@/lib/supabase/types";
+import type { TrafficEvent } from "@/lib/types";
+import { BANDWIDTH_BUCKET_COUNT, BANDWIDTH_WINDOW_SEC, BANDWIDTH_BUCKET_SEC } from "@/lib/constants";
 
 export interface TrafficStats {
   totalPackets: number;
@@ -14,6 +15,8 @@ export interface TrafficStats {
   bandwidthHistory: number[];
   packetsPerSecond: number;
 }
+
+const PPS_WINDOW_SEC = 5;
 
 export function useTrafficStats(events: TrafficEvent[], threats: TrafficEvent[]): TrafficStats {
   return useMemo(() => {
@@ -42,14 +45,33 @@ export function useTrafficStats(events: TrafficEvent[], threats: TrafficEvent[])
       threatLevelSum += threat.threat_level;
     });
 
-    // Calculate bandwidth history (group events into time buckets)
-    const bandwidthHistory: number[] = [];
-    const bucketSize = Math.max(1, Math.floor(events.length / 10));
-    for (let i = 0; i < events.length; i += bucketSize) {
-      const bucket = events.slice(i, i + bucketSize);
-      const bucketBandwidth = bucket.reduce((sum, e) => sum + e.packet_size, 0);
-      bandwidthHistory.push(bucketBandwidth);
+    // Time-based bandwidth history: last BANDWIDTH_WINDOW_SEC seconds
+    // divided into BANDWIDTH_BUCKET_COUNT buckets of BANDWIDTH_BUCKET_SEC each
+    const now = Date.now();
+    const windowStart = now - BANDWIDTH_WINDOW_SEC * 1000;
+    const bandwidthHistory: number[] = new Array(BANDWIDTH_BUCKET_COUNT).fill(0);
+
+    events.forEach((event) => {
+      const eventTime = new Date(event.created_at).getTime();
+      if (eventTime < windowStart) return;
+
+      const offsetMs = eventTime - windowStart;
+      const bucketIdx = Math.min(
+        BANDWIDTH_BUCKET_COUNT - 1,
+        Math.floor(offsetMs / (BANDWIDTH_BUCKET_SEC * 1000))
+      );
+      bandwidthHistory[bucketIdx] += event.packet_size;
+    });
+
+    // Calculate packets per second: events within last PPS_WINDOW_SEC seconds
+    const ppsWindowStart = now - PPS_WINDOW_SEC * 1000;
+    let recentCount = 0;
+    for (const event of events) {
+      if (new Date(event.created_at).getTime() >= ppsWindowStart) {
+        recentCount++;
+      }
     }
+    const packetsPerSecond = Math.round(recentCount / PPS_WINDOW_SEC);
 
     return {
       totalPackets: events.length,
@@ -59,8 +81,8 @@ export function useTrafficStats(events: TrafficEvent[], threats: TrafficEvent[])
       threatCount: threats.length,
       threatsByType,
       avgThreatLevel: threats.length > 0 ? threatLevelSum / threats.length : 0,
-      bandwidthHistory: bandwidthHistory.reverse(),
-      packetsPerSecond: Math.min(events.length, 5),
+      bandwidthHistory,
+      packetsPerSecond,
     };
   }, [events, threats]);
 }

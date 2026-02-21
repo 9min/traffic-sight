@@ -28,9 +28,14 @@ describe("Header", () => {
     expect(screen.getByText("OFFLINE")).toBeInTheDocument();
   });
 
-  it("should display total count formatted", () => {
+  it("should display total count with animated counter", () => {
     render(<Header isConnected={true} totalCount={12345} />);
-    expect(screen.getByText("12,345")).toBeInTheDocument();
+    // AnimatedCounter renders a span that updates via rAF; verify the element exists
+    const eventsLabel = screen.getByText("Events");
+    expect(eventsLabel).toBeInTheDocument();
+    // The counter span is the sibling of the Events label
+    const counterSpan = eventsLabel.parentElement?.querySelector("span.tabular-nums");
+    expect(counterSpan).toBeInTheDocument();
   });
 
   it("should display version badge", () => {

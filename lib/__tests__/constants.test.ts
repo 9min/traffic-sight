@@ -8,6 +8,11 @@ import {
   MAX_LOG_ENTRIES,
   MAX_THREAT_ENTRIES,
   ROLLING_WINDOW,
+  ARC_TTL_MS,
+  RING_TTL_MS,
+  BANDWIDTH_BUCKET_COUNT,
+  BANDWIDTH_WINDOW_SEC,
+  BANDWIDTH_BUCKET_SEC,
 } from "../constants";
 
 describe("CITIES", () => {
@@ -110,5 +115,34 @@ describe("Window size constants", () => {
 
   it("should have MAX_THREAT_ENTRIES <= ROLLING_WINDOW", () => {
     expect(MAX_THREAT_ENTRIES).toBeLessThanOrEqual(ROLLING_WINDOW);
+  });
+});
+
+describe("TTL constants", () => {
+  it("should have positive arc TTL", () => {
+    expect(ARC_TTL_MS).toBeGreaterThan(0);
+  });
+
+  it("should have positive ring TTL", () => {
+    expect(RING_TTL_MS).toBeGreaterThan(0);
+  });
+
+  it("should have arc TTL >= ring TTL", () => {
+    expect(ARC_TTL_MS).toBeGreaterThanOrEqual(RING_TTL_MS);
+  });
+});
+
+describe("Bandwidth constants", () => {
+  it("should have positive bucket count", () => {
+    expect(BANDWIDTH_BUCKET_COUNT).toBeGreaterThan(0);
+  });
+
+  it("should have bucket count * bucket sec equal window sec", () => {
+    expect(BANDWIDTH_BUCKET_COUNT * BANDWIDTH_BUCKET_SEC).toBe(BANDWIDTH_WINDOW_SEC);
+  });
+
+  it("should have positive window and bucket durations", () => {
+    expect(BANDWIDTH_WINDOW_SEC).toBeGreaterThan(0);
+    expect(BANDWIDTH_BUCKET_SEC).toBeGreaterThan(0);
   });
 });
