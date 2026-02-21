@@ -31,7 +31,7 @@ export default function MobileNav({ stats, threats, globeSlot }: MobileNavProps)
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-2 px-3 text-[10px] font-bold tracking-widest uppercase transition-all
+            className={`flex-1 py-2 px-3 text-[10px] font-bold tracking-widest uppercase transition-all cursor-pointer
               ${
                 activeTab === tab.id
                   ? "text-matrix-green border-b-2 border-matrix-green bg-matrix-green/5 text-glow-green"

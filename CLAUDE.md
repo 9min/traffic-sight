@@ -7,7 +7,7 @@
 ## 프로젝트 개요
 
 **Traffic Sight**는 사이버펑크/매트릭스 테마의 실시간 네트워크 트래픽 모니터링 대시보드입니다.
-Faker.js로 가짜 트래픽 데이터를 생성하고, Supabase에 저장한 뒤 Supabase Realtime으로 프론트엔드에 실시간 스트리밍합니다.
+Faker.js로 클라이언트 사이드에서 모의 트래픽 데이터를 생성하고, EventBuffer를 통해 배칭하여 대시보드에 실시간 스트리밍합니다. 외부 서버나 DB 없이 독립적으로 동작합니다.
 
 - **PRD:** `/docs/PRD.md`
 - **아키텍처:** `/docs/ARCHITECTURE.md`
@@ -72,13 +72,13 @@ git push origin feat/xxx                      # 6. 푸시
 |---------|------|------|
 | Framework | Next.js (App Router) | 15.x |
 | UI | React | 19.x |
-| 3D Globe | react-globe.gl + three.js | 2.37 / 0.180 |
+| 3D Globe | react-globe.gl + three.js | 2.32 / 0.180 |
 | Charts | ECharts + echarts-for-react | 5.5 / 3.0 |
-| Realtime | Supabase (supabase-js) | 2.49 |
 | Mock Data | @faker-js/faker | 10.x |
 | Animation | Motion (framer-motion v12) + GSAP | 12.x / 3.13 |
 | Styling | Tailwind CSS | 4.x |
 | Language | TypeScript | 5.7 |
+| Test | Vitest + React Testing Library | - |
 
 ---
 
@@ -91,14 +91,11 @@ npm run dev
 # 프로덕션 빌드
 npm run build
 
-# 트래픽 데이터 생성기 실행 (Supabase 연결 필요)
-npm run generate-traffic
-
 # 린트
 npm run lint
 
 # 테스트
-npm run test              # 전체 테스트 실행
+npm run test              # 전체 테스트 실행 (112개+)
 npm run test:watch        # 워치 모드 (개발 중 사용)
 npm run test:coverage     # 커버리지 리포트
 ```
@@ -129,9 +126,14 @@ npm run test:coverage     # 커버리지 리포트
 소스 파일                              테스트 파일
 lib/constants.ts                  →   lib/__tests__/constants.test.ts
 lib/traffic-generator.ts          →   lib/__tests__/traffic-generator.test.ts
+lib/event-buffer.ts               →   lib/__tests__/event-buffer.test.ts
 hooks/useTrafficStats.ts          →   hooks/__tests__/useTrafficStats.test.ts
+hooks/useTrafficStream.ts         →   hooks/__tests__/useTrafficStream.test.ts
 components/ui/CyberPanel.tsx      →   components/__tests__/CyberPanel.test.tsx
 components/dashboard/Header.tsx   →   components/__tests__/Header.test.tsx
+components/dashboard/LogTerminal.tsx → components/__tests__/LogTerminal.test.tsx
+components/dashboard/MobileNav.tsx → components/__tests__/MobileNav.test.tsx
+components/effects/GlitchText.tsx →   components/__tests__/GlitchText.test.tsx
 ```
 
 - 테스트 파일은 소스와 같은 모듈의 `__tests__/` 디렉토리에 배치
@@ -169,31 +171,30 @@ traffic-sight/
 │   └── providers.tsx           # Provider 래퍼
 ├── components/
 │   ├── dashboard/              # 대시보드 패널 컴포넌트
-│   │   ├── GlobeSection.tsx    # 3D 글로브 (dynamic import, ssr: false)
-│   │   ├── StatsPanel.tsx      # 좌측 통계 (ECharts)
-│   │   ├── ThreatPanel.tsx     # 우측 위협 알림 (ECharts + Motion)
-│   │   ├── LogTerminal.tsx     # 하단 로그 터미널
-│   │   └── Header.tsx          # 헤더 (GlitchText + 시계 + 상태)
+│   │   ├── GlobeSection.tsx    # 3D 글로브 (dynamic import, ssr: false, memo)
+│   │   ├── StatsPanel.tsx      # 좌측 통계 (ECharts, memo)
+│   │   ├── ThreatPanel.tsx     # 우측 위협 알림 (ECharts + Motion, memo)
+│   │   ├── LogTerminal.tsx     # 하단 로그 터미널 (CSS 애니메이션, memo)
+│   │   ├── Header.tsx          # 헤더 (GlitchText + 시계 + 상태, memo)
+│   │   └── MobileNav.tsx       # 모바일 탭 내비게이션
 │   ├── effects/                # 시각 효과
-│   │   ├── MatrixRain.tsx      # Canvas 매트릭스 레인
-│   │   └── GlitchText.tsx      # 글리치 텍스트 애니메이션
+│   │   ├── MatrixRain.tsx      # Canvas 매트릭스 레인 (Web Worker)
+│   │   ├── GlitchText.tsx      # 글리치 텍스트 애니메이션
+│   │   └── BootSequence.tsx    # 부트 시퀀스 애니메이션
 │   └── ui/                     # 재사용 UI
 │       └── CyberPanel.tsx      # 네온 보더 패널 (green/cyan/red)
 ├── hooks/                      # 커스텀 훅
-│   ├── useTrafficStream.ts     # Supabase Realtime 구독
-│   └── useTrafficStats.ts      # 통계 계산
+│   ├── useTrafficStream.ts     # 클라이언트 사이드 트래픽 생성 + EventBuffer
+│   └── useTrafficStats.ts      # 통계 계산 (useStableRef 참조 안정화)
 ├── lib/                        # 유틸리티
-│   ├── supabase/
-│   │   ├── client.ts           # Supabase 클라이언트
-│   │   └── types.ts            # DB 타입 정의
-│   └── constants.ts            # 도시 좌표, 프로토콜, 위협 유형
-├── scripts/
-│   ├── generate-traffic.ts     # Faker.js 데이터 생성기
-│   └── schema.sql              # Supabase 테이블 스키마
+│   ├── constants.ts            # 도시 좌표, 프로토콜, 위협 유형, 윈도우 크기
+│   ├── types.ts                # TrafficEvent 타입 정의
+│   ├── traffic-generator.ts    # Faker.js 기반 트래픽 이벤트 생성기
+│   └── event-buffer.ts         # 이벤트 배칭 버퍼 (타이머 기반 flush)
 ├── vitest.config.ts            # Vitest 설정
 ├── vitest.setup.ts             # 테스트 환경 설정 (mock 등)
 └── workers/
-    └── matrix-rain.worker.ts   # OffscreenCanvas 워커 (선택적)
+    └── matrix-rain.worker.ts   # OffscreenCanvas 워커
 ```
 
 ---
@@ -207,18 +208,30 @@ traffic-sight/
 
 ### 2. 데이터 흐름 (단방향)
 ```
-generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTrafficStats → Components
+traffic-generator.ts → EventBuffer → useTrafficStream → useTrafficStats → Components
+(300ms 간격 생성)     (500ms flush)   (롤링 윈도우 100)   (참조 안정화)     (React.memo)
 ```
 
 ### 3. 상태 관리
 - 외부 상태 라이브러리 없음 (React useState/useMemo만 사용)
-- `useTrafficStream`: events (최근 50개), threats (최근 20개), isConnected, totalCount
+- `useTrafficStream`: events (최근 100개), threats (최근 20개), isConnected, totalCount
 - `useTrafficStats`: protocolDistribution, countryDistribution, bandwidth 등 파생 상태
+- `useStableRef`: 구조적 비교로 참조 안정화, 불필요 리렌더 방지
 
 ### 4. 롤링 윈도우 패턴
-- 이벤트: 최근 50개 유지 (`ROLLING_WINDOW`)
+- 이벤트: 최근 100개 유지 (`ROLLING_WINDOW`)
 - 위협: 최근 20개 유지 (`MAX_THREAT_ENTRIES`)
-- 글로브 아크: 최대 30개 동시 표시 (`MAX_ARCS`)
+- 글로브 아크: 최대 20개 동시 표시 (`MAX_ARCS`), 6초 TTL
+- 글로브 링: 최대 15개, 3초 TTL
+- 로그 표시: 최대 30개 (`MAX_LOG_ENTRIES`)
+
+### 5. 성능 최적화
+- EventBuffer 배칭: 초당 ~2회 state 업데이트 (300ms 생성, 500ms flush)
+- React.memo: 모든 대시보드 컴포넌트 (Header, StatsPanel, ThreatPanel, LogTerminal, GlobeSection)
+- useStableRef: Record/Array 구조적 비교로 참조 안정화
+- Globe pointsData: 2초 스로틀
+- LogTerminal: CSS 애니메이션 (AnimatePresence 제거)
+- ThreatPanel: mode="sync", height 애니메이션 제거
 
 ---
 
@@ -227,12 +240,13 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
 ### TypeScript
 - `strict: true` 모드
 - 인터페이스는 `I` 접두사 없이 사용 (예: `TrafficEvent`, `ArcData`)
-- 타입 파일은 `lib/supabase/types.ts`에 집중
+- 타입 파일은 `lib/types.ts`에 집중
 
 ### 컴포넌트
 - 모든 클라이언트 컴포넌트 파일 상단에 `"use client"` 선언
 - Props 인터페이스는 컴포넌트 파일 내에 정의
 - `default export` 사용
+- 대시보드 컴포넌트는 `React.memo`로 래핑
 
 ### 스타일링
 - Tailwind CSS 4 유틸리티 클래스 우선
@@ -247,6 +261,8 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
   - `neon-purple`: #bf00ff
 - 네온 글로우: `neon-glow-green`, `neon-glow-cyan`, `neon-glow-red` 클래스
 - 텍스트 글로우: `text-glow-green`, `text-glow-cyan`, `text-glow-red` 클래스
+- 전역 `user-select: none`, `cursor: default` (대시보드 모니터링 UI)
+- Globe: `cursor: grab` / `cursor: grabbing` (드래그 회전)
 
 ### 차트 (ECharts)
 - `lazyUpdate: true` 옵션 필수
@@ -264,15 +280,8 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
   - `three/tsl` → `three/build/three.tsl.js`
 - three.js 버전 변경 시 반드시 빌드 테스트 필요
 
-### Supabase 클라이언트
-- `.env.local`의 플레이스홀더 URL은 반드시 `https://` 형식 유지
-  (빌드 시 Supabase 클라이언트가 URL 검증하므로)
-- Realtime 사용 전 Supabase Dashboard에서 `traffic_events` 테이블의 Replication 활성화 필요
-
 ### 빌드 시 주의
 - Globe 컴포넌트는 반드시 `dynamic import + ssr: false`로 로드
-- `page.tsx`는 `"use client"`이지만 Next.js가 정적 프리렌더링 시도하므로,
-  Supabase URL이 유효한 형식이어야 빌드 통과
 
 ---
 
@@ -281,13 +290,14 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
 ### 새 대시보드 패널 추가
 1. `components/dashboard/NewPanel.tsx` 생성 (`"use client"`)
 2. `CyberPanel`로 감싸서 사이버 테마 적용
-3. `app/page.tsx`의 그리드 레이아웃에 배치
-4. 필요 시 `useTrafficStats`에 새 통계 필드 추가
-5. **`components/__tests__/NewPanel.test.tsx` 테스트 작성 (필수)**
+3. `React.memo`로 래핑
+4. `app/page.tsx`의 그리드 레이아웃에 배치
+5. 필요 시 `useTrafficStats`에 새 통계 필드 추가
+6. **`components/__tests__/NewPanel.test.tsx` 테스트 작성 (필수)**
 
 ### 새 위협 유형 추가
 1. `lib/constants.ts`의 `THREAT_TYPES` 배열에 추가
-2. `scripts/generate-traffic.ts`에서 자동으로 사용됨
+2. `lib/traffic-generator.ts`에서 자동으로 사용됨
 3. **기존 `constants.test.ts` 테스트가 자동으로 검증**
 
 ### 새 도시 추가
@@ -304,25 +314,14 @@ generate-traffic.ts → Supabase DB → Realtime → useTrafficStream → useTra
 
 ---
 
-## 환경 변수
-
-| 변수 | 용도 | 필수 |
-|------|------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | O |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 익명 키 | O |
-| `SUPABASE_SERVICE_ROLE_KEY` | 데이터 생성기용 서비스 키 | 생성기 전용 |
-
----
-
 ## 검증 체크리스트
 
 ### 자동화 테스트
-- [ ] `npm run test` — 전체 84개+ 테스트 통과
+- [ ] `npm run test` — 전체 112개+ 테스트 통과
 - [ ] `npm run lint` — ESLint 통과
 - [ ] `npm run build` — 프로덕션 빌드 성공
 
 ### 수동 검증
 - [ ] `npm run dev`로 로컬 확인 (Globe 렌더링, MatrixRain 동작)
-- [ ] Supabase 연결 후 `npm run generate-traffic` → 실시간 데이터 수신 확인
 - [ ] Chrome DevTools Performance 탭에서 60fps 유지 확인
-- [ ] 1920px / 1440px / 1024px 반응형 확인
+- [ ] 1920px / 1440px / 1024px / 모바일 반응형 확인

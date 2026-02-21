@@ -32,6 +32,8 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  cursor: default;
 }
 
 /* Scrollbar styling */
@@ -226,6 +228,15 @@ body {
 
 .log-entry-appear {
   animation: logEntryAppear 0.3s ease-out forwards;
+}
+
+/* Globe grab cursor for drag-to-rotate */
+.globe-grab canvas {
+  cursor: grab !important;
+}
+
+.globe-grab canvas:active {
+  cursor: grabbing !important;
 }
 
 /* Globe vignette overlay */

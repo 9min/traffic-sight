@@ -123,7 +123,7 @@ main ←── hotfix/critical-bug ──→ (main + dev 양쪽에 머지)
 
 ```
 globe, stats, threat, log, header, matrix-rain, glitch,
-realtime, supabase, generator, config, deps
+realtime, generator, config, deps
 ```
 
 ### subject 규칙
@@ -162,7 +162,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 feat(globe): add threat level-based arc color gradient
 fix(realtime): prevent duplicate subscription on remount
 perf(matrix-rain): reduce canvas draw calls by 40%
-docs: add Supabase setup guide to DEVELOPMENT.md
+docs: add development setup guide to DEVELOPMENT.md
 
 # 나쁜 커밋 (X)
 update code
@@ -460,7 +460,7 @@ git checkout -b hotfix/revert-and-fix
 ### 시크릿이 커밋된 경우
 
 ```bash
-# 1. 즉시 해당 시크릿 폐기/로테이션 (Supabase Dashboard에서)
+# 1. 즉시 해당 시크릿 폐기/로테이션 (해당 서비스 대시보드에서)
 # 2. git history에서 제거
 git filter-branch --force --tree-filter \
   'rm -f .env.local' HEAD

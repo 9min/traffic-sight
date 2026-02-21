@@ -1,7 +1,7 @@
 # Traffic Sight - 제품 요구사항 명세서 (PRD)
 
-> **문서 버전:** v2.0.4
-> **최종 수정일:** 2026-02-20
+> **문서 버전:** v3.0.0
+> **최종 수정일:** 2026-02-22
 > **상태:** 개발 진행 중
 > **작성자:** Traffic Sight 개발팀
 
@@ -29,20 +29,20 @@
 
 ### 1.2 한 줄 요약
 
-사이버펑크/매트릭스 테마의 3D 글로브 기반 실시간 네트워크 트래픽 시각화 대시보드로, Faker.js가 생성한 모의 트래픽 데이터를 Supabase Realtime을 통해 스트리밍하여 시각적으로 인상적인 보안 모니터링 경험을 제공한다.
+사이버펑크/매트릭스 테마의 3D 글로브 기반 실시간 네트워크 트래픽 시각화 대시보드로, Faker.js를 활용하여 브라우저 내에서 모의 트래픽 데이터를 클라이언트 사이드로 생성하고 시각적으로 인상적인 보안 모니터링 경험을 제공한다. 외부 서버나 데이터베이스 없이 완전히 독립적으로 동작한다.
 
 ### 1.3 제품 비전
 
-Traffic Sight는 네트워크 보안 관제 센터(SOC)의 시각적 경험을 웹 브라우저에서 재현하는 것을 목표로 한다. 전 세계 32개 주요 도시 간의 네트워크 트래픽 흐름을 3D 글로브 위에 실시간 아크 애니메이션으로 표시하며, 매트릭스 레인 배경, 글리치 텍스트 이펙트, 네온 글로우 UI 등 사이버펑크 미학을 전면적으로 적용하여 기술적 완성도와 시각적 몰입감을 동시에 달성한다.
+Traffic Sight는 네트워크 보안 관제 센터(SOC)의 시각적 경험을 웹 브라우저에서 재현하는 것을 목표로 한다. 전 세계 32개 주요 도시 간의 네트워크 트래픽 흐름을 3D 글로브 위에 실시간 아크 및 링 애니메이션으로 표시하며, 매트릭스 레인 배경, 글리치 텍스트 이펙트, 네온 글로우 UI, 시네마틱 부팅 시퀀스 등 사이버펑크 미학을 전면적으로 적용하여 기술적 완성도와 시각적 몰입감을 동시에 달성한다.
 
 ### 1.4 핵심 가치 제안
 
 | 가치 | 설명 |
 |------|------|
-| **시각적 임팩트** | 사이버펑크 테마의 3D 글로브, 매트릭스 레인, 글리치 이펙트로 강렬한 첫인상 제공 |
-| **실시간 데이터 스트리밍** | Supabase Realtime의 `postgres_changes` 구독을 통한 1초 이내 데이터 반영 |
-| **포트폴리오 가치** | 프론트엔드 기술력, 3D 시각화, 실시간 데이터 처리 역량을 한 번에 입증 |
-| **교육적 가치** | WebGL 3D 렌더링, 실시간 구독, 애니메이션 기법 학습 레퍼런스 |
+| **시각적 임팩트** | 사이버펑크 테마의 3D 글로브, 매트릭스 레인, 글리치 이펙트, 시네마틱 부팅 시퀀스로 강렬한 첫인상 제공 |
+| **독립형 클라이언트** | 외부 서버/DB 없이 브라우저 내에서 Faker.js + EventBuffer로 트래픽 데이터를 생성·스트리밍. 별도 설정 없이 즉시 실행 가능 |
+| **포트폴리오 가치** | 프론트엔드 기술력, 3D 시각화, 실시간 데이터 처리, 성능 최적화 역량을 한 번에 입증 |
+| **교육적 가치** | WebGL 3D 렌더링, 클라이언트 사이드 이벤트 버퍼링, 애니메이션 기법 학습 레퍼런스 |
 
 ---
 
@@ -52,25 +52,25 @@ Traffic Sight는 네트워크 보안 관제 센터(SOC)의 시각적 경험을 �
 
 현대 사이버 보안 관제 시스템은 대량의 네트워크 트래픽 데이터를 실시간으로 수집, 분석, 시각화하는 것이 핵심이다. 그러나 실제 보안 관제 시스템은 접근이 제한적이며, 개발자가 이러한 시스템의 프론트엔드 기술을 학습하거나 시연하기 어렵다.
 
-Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.js를 활용한 사실적인 모의 트래픽 데이터 생성과 Supabase의 실시간 데이터베이스 기능을 조합하여, 실제 보안 관제 대시보드에 준하는 시각적 경험을 만들어낸다.
+Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.js를 활용하여 브라우저 내에서 사실적인 모의 트래픽 데이터를 클라이언트 사이드로 생성하고, EventBuffer 패턴을 통해 배치 처리하여 실제 보안 관제 대시보드에 준하는 시각적 경험을 만들어낸다. 외부 서버나 데이터베이스 의존성 없이 완전히 독립적으로 동작하므로, 누구나 별도 설정 없이 즉시 실행할 수 있다.
 
 ### 2.2 프로젝트 목적
 
 1. **기술 시연(Tech Demo):** 최신 프론트엔드 기술 스택(Next.js 15, React 19, Three.js, ECharts)의 통합 활용 능력을 시연한다.
 2. **포트폴리오 프로젝트:** 개발자 포트폴리오에서 기술적 깊이와 디자인 감각을 동시에 보여주는 대표 프로젝트로 활용한다.
-3. **학습 레퍼런스:** 3D 시각화, 실시간 데이터 스트리밍, 고성능 애니메이션 구현의 실전 레퍼런스를 제공한다.
+3. **학습 레퍼런스:** 3D 시각화, 클라이언트 사이드 데이터 생성·배치 처리, 고성능 애니메이션 구현의 실전 레퍼런스를 제공한다.
 4. **사이버 보안 관심 유발:** 네트워크 트래픽과 위협 탐지의 개념을 시각적으로 이해할 수 있는 교육 도구로 기능한다.
 
 ### 2.3 스코프 경계
 
 | 범위 내 (In-Scope) | 범위 외 (Out-of-Scope) |
 |---------------------|----------------------|
-| Faker.js 기반 모의 트래픽 데이터 생성 | 실제 네트워크 패킷 캡처 및 분석 |
-| Supabase Realtime 기반 실시간 스트리밍 | 자체 WebSocket 서버 구축 |
-| 3D 글로브 트래픽 시각화 | 2D 지도 기반 시각화 |
-| 사이버펑크/매트릭스 테마 UI | 다중 테마 지원 |
-| 데스크탑 반응형 (1024px 이상) | 모바일 최적화 (768px 이하) |
-| 읽기 전용 대시보드 | 사용자 인증 및 데이터 필터링 |
+| Faker.js 기반 클라이언트 사이드 모의 트래픽 생성 | 실제 네트워크 패킷 캡처 및 분석 |
+| EventBuffer를 통한 배치 스트리밍 | 자체 WebSocket 서버 구축 |
+| 3D 글로브 트래픽 시각화 (아크 + 링 이펙트) | 2D 지도 기반 시각화 |
+| 사이버펑크/매트릭스 테마 UI + 시네마틱 부팅 시퀀스 | 다중 테마 지원 |
+| 데스크탑 3열 레이아웃 + 모바일 탭 네비게이션 | 태블릿 전용 레이아웃 |
+| 읽기 전용 대시보드 (외부 의존성 없음) | 사용자 인증 및 데이터 필터링 |
 
 ---
 
@@ -82,7 +82,7 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 
 - **프로필:** 취업 준비 중인 주니어~미드레벨 프론트엔드 개발자
 - **니즈:** 기술적 깊이와 시각적 완성도를 동시에 보여줄 수 있는 포트폴리오 프로젝트
-- **사용 시나리오:** GitHub 레포지토리 fork 후 Supabase 프로젝트 연결, Vercel 배포하여 자신의 포트폴리오로 활용
+- **사용 시나리오:** GitHub 레포지토리 fork 후 Vercel 배포하여 자신의 포트폴리오로 활용 (별도 설정 불필요)
 - **핵심 관심사:** 코드 품질, 아키텍처 설계, 최신 기술 스택 활용
 
 #### 페르소나 B: 사이버 보안 애호가
@@ -104,22 +104,30 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 ```
 사용자가 배포된 URL에 접속
   │
+  ├─ 시네마틱 부팅 시퀀스 (BootSequence)
+  │   ├─ 부팅 로그 메시지 순차 표시
+  │   ├─ 프로그레스 바 애니메이션
+  │   └─ 페이드아웃 전환
+  │
   ├─ 매트릭스 레인 배경 위에 글리치 텍스트 타이틀 확인
   │
-  ├─ 3D 글로브에서 실시간 트래픽 아크 애니메이션 관찰
+  ├─ 3D 글로브에서 실시간 트래픽 아크 + 링 애니메이션 관찰
   │   ├─ 초록색 아크: 정상 트래픽
-  │   └─ 빨간색 아크: 위협 트래픽
+  │   ├─ 빨간색 아크: 위협 트래픽
+  │   └─ 링 이펙트: 목적지 도시 충격파 효과
   │
-  ├─ 좌측 통계 패널에서 트래픽 개요 확인
+  ├─ 좌측 통계 패널에서 트래픽 개요 확인 (데스크탑)
   │   ├─ 총 패킷 수 (애니메이션 카운터)
   │   ├─ 프로토콜 분포 도넛 차트
   │   ├─ 대역폭 추이 라인 차트
   │   └─ 상위 5개 소스 국가
   │
-  ├─ 우측 위협 패널에서 보안 상황 파악
+  ├─ 우측 위협 패널에서 보안 상황 파악 (데스크탑)
   │   ├─ 위협 레벨 게이지
   │   ├─ 위협 유형별 카운트
   │   └─ 실시간 위협 피드 (슬라이드-인 애니메이션)
+  │
+  ├─ 모바일에서는 탭 네비게이션으로 Globe/Stats/Threats 전환
   │
   └─ 하단 로그 터미널에서 개별 이벤트 상세 확인
       ├─ 타임스탬프, IP, 프로토콜, 포트, 패킷 크기
@@ -136,43 +144,60 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 |------|------|
 | **컴포넌트** | `GlobeSection.tsx` |
 | **기반 라이브러리** | `react-globe.gl` (Three.js 기반) |
-| **지구 텍스처** | `three-globe/example/img/earth-dark.jpg` (다크 테마) |
-| **대기 효과** | 초록색 (`#00ff41`) 대기광, 고도 0.15 |
-| **자동 회전** | 활성화, 속도 0.5 |
+| **지구 텍스처** | `three-globe/example/img/earth-night.jpg` (다크 테마) + `earth-topology.png` (범프 맵) |
+| **대기 효과** | 시안 (`#00d4ff`) 대기광, 고도 0.25 |
+| **자동 회전** | 활성화, 속도 0.8 |
+| **초기 카메라** | `{ lat: 20, lng: -20, altitude: 2.2 }` (대서양 중심 뷰) |
 | **동적 로딩** | Next.js `dynamic()` SSR 비활성화, 로딩 인디케이터 제공 |
+| **크기 조정** | `ResizeObserver` 기반 동적 크기 조정 |
+| **비네트 오버레이** | 글로브 영역에 비네트(vignette) 효과 적용 |
+| **커서** | `cursor: grab` (기본), `cursor: grabbing` (드래그 중) |
 
 #### 4.1.1 트래픽 아크 (Arc)
 
-- **최대 동시 표시:** 30개 (`MAX_ARCS`)
-- **정상 트래픽:** 초록-시안 그라데이션 (`rgba(0, 255, 65, 0.8)` -> `rgba(0, 212, 255, 0.4)`), 선 두께 0.8
-- **위협 트래픽:** 빨강-오렌지 그라데이션 (`rgba(255, 0, 64, 0.8)` -> `rgba(255, 102, 0, 0.4)`), 선 두께 1.5
-- **대시 애니메이션:** 길이 0.3~0.5, 간격 1~2, 애니메이션 시간 1500~2500ms (랜덤)
-- **아크 고도:** 자동 스케일 0.3
+- **최대 동시 표시:** 20개 (`MAX_ARCS`)
+- **TTL (수명):** 6000ms (`ARC_TTL_MS`) - 생성 후 자동 제거
+- **정상 트래픽:** 초록-시안 그라데이션 (`rgba(0, 255, 65, 0.9)` -> `rgba(0, 212, 255, 0.6)`), 선 두께 1.2
+- **위협 트래픽:** 빨강-오렌지 그라데이션 (`rgba(255, 0, 64, 0.9)` -> `rgba(255, 102, 0, 0.6)`), 선 두께 2.5
+- **대시 애니메이션:** 정상 - 길이 0.4, 간격 1.5 / 위협 - 길이 0.8, 간격 0.6, 애니메이션 시간 1000~1800ms (랜덤)
+- **아크 고도:** 자동 스케일 0.45
+- **전환 시간:** 0ms (`arcsTransitionDuration={0}`)
 
-#### 4.1.2 도시 마커 (Point)
+#### 4.1.2 충격파 링 (Ring)
+
+- **최대 동시 표시:** 15개 (`MAX_RINGS`)
+- **TTL (수명):** 3000ms (`RING_TTL_MS`) - 생성 후 자동 제거
+- **위치:** 목적지 도시 좌표 (트래픽 도착 지점)
+- **정상 트래픽:** 최대 반경 2, 전파 속도 2, 반복 주기 1200ms, 색상 `rgba(0, 255, 65, 0.4)`
+- **위협 트래픽:** 최대 반경 4, 전파 속도 4, 반복 주기 600ms, 색상 `rgba(255, 0, 64, 0.6)`
+
+#### 4.1.3 도시 마커 (Point)
 
 - **데이터 소스:** 트래픽 이벤트의 출발지/목적지 좌표에서 중복 제거
-- **마커 크기:** 반경 0.3, 고도 0.01
+- **마커 고도:** 0.02
 - **색상 분류:**
-  - 출발지 (정상): `#00ff41` (매트릭스 그린)
-  - 출발지 (위협): `#ff0040` (위협 레드)
-  - 목적지: `#00d4ff` (사이버 시안)
+  - 출발지 (정상): `#00ff41` (매트릭스 그린), 크기 0.5
+  - 출발지 (위협): `#ff0040` (위협 레드), 크기 0.7
+  - 목적지: `#00d4ff` (사이버 시안), 크기 0.6
 - **포인트 병합:** 활성화 (`pointsMerge={true}`)
+- **전환 시간:** 0ms (`pointsTransitionDuration={0}`)
+- **업데이트 쓰로틀:** 2초 간격 (`POINTS_THROTTLE_MS`)
 
 ### 4.2 통계 패널 (Stats Panel)
 
 | 항목 | 상세 |
 |------|------|
 | **컴포넌트** | `StatsPanel.tsx` |
-| **위치** | 좌측 사이드바 (너비 280px) |
+| **위치** | 좌측 사이드바 (너비 280px, 데스크탑) / Stats 탭 (모바일) |
 | **데이터 소스** | `useTrafficStats` 훅 (이벤트 배열 기반 실시간 계산) |
+| **최적화** | `React.memo`, `useMemo`로 topCountries 메모이제이션 |
 
 #### 4.2.1 오버뷰 카드
 
-- **총 패킷 수:** `AnimatedCounter` 컴포넌트, 500ms ease-out 커빅 보간 애니메이션
+- **총 패킷 수:** `AnimatedCounter` 컴포넌트, 400ms ease-out 커빅 보간 애니메이션, RAF cleanup
 - **위협 수:** 동일 카운터 애니메이션 적용
 - **대역폭:** 바이트 단위 자동 포맷 (B / KB / MB)
-- **초당 패킷:** 최근 이벤트 기반 계산 (최대 5)
+- **초당 패킷:** 최근 5초 이벤트 기반 계산
 
 #### 4.2.2 프로토콜 분포 차트
 
@@ -185,7 +210,7 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 #### 4.2.3 대역폭 추이 차트
 
 - **차트 유형:** ECharts 라인(Line) 차트, smooth 보간
-- **데이터:** 이벤트를 10개 버킷으로 분할, 버킷별 패킷 크기 합산
+- **데이터:** 최근 30초를 10개 버킷(3초 단위)으로 분할, 버킷별 패킷 크기 합산
 - **스타일:** 시안 라인(`#00d4ff`, 2px), 시안 그라데이션 영역 (0.3 -> 0 불투명도)
 - **Y축:** 바이트 단위 자동 포맷
 
@@ -194,14 +219,16 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 - **표시:** 상위 5개 국가 코드, 트래픽 수, 프로그레스 바
 - **프로그레스 바:** 1위 대비 비율 계산, 매트릭스 그린 60% 불투명도
 - **갱신:** 이벤트 추가 시 실시간 재계산
+- **최적화:** `useMemo`로 topCountries 메모이제이션
 
 ### 4.3 위협 패널 (Threat Panel)
 
 | 항목 | 상세 |
 |------|------|
 | **컴포넌트** | `ThreatPanel.tsx` |
-| **위치** | 우측 사이드바 (너비 300px) |
+| **위치** | 우측 사이드바 (너비 300px, 데스크탑) / Threats 탭 (모바일) |
 | **최대 저장 건수** | 20건 (`MAX_THREAT_ENTRIES`) |
+| **최적화** | `React.memo`, `useMemo`로 threatTypeEntries 메모이제이션 |
 
 #### 4.3.1 위협 레벨 게이지
 
@@ -235,9 +262,9 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 #### 4.3.3 실시간 위협 피드
 
 - **표시:** 최근 위협 이벤트 10건
-- **애니메이션:** Motion(Framer Motion) `AnimatePresence` + `popLayout` 모드
-  - 진입: `opacity: 0 -> 1`, `x: 20 -> 0`, `height: 0 -> auto` (300ms)
-  - 퇴장: `opacity: 1 -> 0`, `x: 0 -> -20`, `height: auto -> 0` (300ms)
+- **애니메이션:** Motion(Framer Motion) `AnimatePresence` + `sync` 모드
+  - 진입: `opacity: 0 -> 1`, `x: 20 -> 0` (300ms)
+  - 퇴장: `opacity: 0`, `x: 0 -> -20` (300ms)
 - **각 항목 표시 정보:** 타임스탬프, 위협 레벨 배지, 위협 유형, 출발지/목적지 IP, 출발지/목적지 도시 및 국가
 - **위협 레벨 배지 색상:**
 
@@ -255,7 +282,8 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 |------|------|
 | **컴포넌트** | `LogTerminal.tsx` |
 | **위치** | 하단 풀 와이드 (높이 200px) |
-| **최대 표시 건수** | 50건 (`ROLLING_WINDOW`) |
+| **최대 표시 건수** | 30건 (`MAX_LOG_ENTRIES`) |
+| **최적화** | `React.memo`, `useMemo`로 visibleEvents 메모이제이션, formatTime 모듈 레벨 캐시 (최대 200건) |
 
 #### 4.4.1 터미널 UI
 
@@ -281,8 +309,9 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 
 #### 4.4.3 애니메이션
 
-- Motion `AnimatePresence` + `popLayout` 모드
-- 진입: `opacity: 0 -> 1`, `y: -10 -> 0` (200ms)
+- CSS 키프레임 애니메이션 (`log-entry-appear` 클래스)
+- 진입: `opacity: 0 -> 1`, `translateY(-4px) -> 0` (CSS transition)
+- AnimatePresence 대신 CSS 애니메이션으로 성능 최적화
 
 ### 4.5 매트릭스 레인 배경
 
@@ -319,65 +348,88 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 - **복원 시간:** 100~250ms 후 원래 문자로 복원
 - **레이어 효과:** 시안/레드 색상의 2개 겹침 레이어, CSS `glitch1`/`glitch2` 애니메이션
 
-### 4.7 실시간 데이터 스트리밍
+### 4.7 클라이언트 사이드 데이터 스트리밍
 
 | 항목 | 상세 |
 |------|------|
 | **훅** | `useTrafficStream.ts` |
-| **프로토콜** | Supabase Realtime (`postgres_changes` 이벤트) |
-| **채널명** | `traffic-realtime` |
+| **데이터 생성** | `lib/traffic-generator.ts` (Faker.js 기반) |
+| **배치 처리** | `lib/event-buffer.ts` (`EventBuffer` 클래스) |
+| **상태 업데이트** | ~2회/초 (FLUSH_INTERVAL_MS=500ms) |
 
-#### 4.7.1 연결 흐름
+#### 4.7.1 데이터 흐름
 
 ```
 1. 컴포넌트 마운트
    │
-   ├─ 초기 데이터 페치 (최근 50건, created_at DESC)
-   │   ├─ events 상태 초기화
-   │   ├─ threats 필터링 (threat_level > 0)
-   │   └─ totalCount 초기화
+   ├─ isConnected = true (항상 LIVE)
    │
-   └─ Supabase Realtime 채널 구독
-       ├─ 이벤트: INSERT
-       ├─ 스키마: public
-       ├─ 테이블: traffic_events
+   ├─ EventBuffer 생성 (flushInterval: 500ms)
+   │   └─ buffer.start() → setInterval로 flush 주기 시작
+   │
+   └─ 이벤트 생성 인터벌 시작 (GENERATION_INTERVAL_MS: 300ms)
        │
-       └─ 콜백: addEvent()
-           ├─ events 배열 선두에 추가 (최대 50건 유지)
+       └─ 매 300ms마다:
+           ├─ generateTrafficEvent() → Faker.js로 트래픽 이벤트 1건 생성
+           ├─ crypto.randomUUID() → ID 부여
+           ├─ new Date().toISOString() → 타임스탬프 부여
+           └─ buffer.push(event) → 내부 버퍼에 축적
+       │
+       매 500ms마다 (flush):
+           ├─ events 배열 선두에 배치 추가 (최대 100건 유지, ROLLING_WINDOW)
            ├─ totalCount 증가
            └─ threat_level > 0 이면 threats 배열에 추가 (최대 20건 유지)
 ```
 
 #### 4.7.2 연결 상태
 
-- **SUBSCRIBED:** 헤더에 초록색 점 + "CONNECTED" 텍스트 + 펄스 애니메이션
-- **기타 상태:** 빨간색 점 + "OFFLINE" 텍스트
+- **항상 LIVE:** 데이터가 클라이언트에서 생성되므로 연결 끊김 없음
+- **표시:** 초록색 점 + "CONNECTED" 텍스트 + 펄스 애니메이션
 
-#### 4.7.3 Supabase 클라이언트 설정
+#### 4.7.3 생성 파라미터
 
-- **이벤트 처리 속도 제한:** 초당 10건 (`eventsPerSecond: 10`)
-- **인증:** `NEXT_PUBLIC_SUPABASE_ANON_KEY` (anon key) 사용
-
-### 4.8 데이터 생성기 스크립트
-
-| 항목 | 상세 |
-|------|------|
-| **스크립트** | `scripts/generate-traffic.ts` |
-| **실행 명령** | `npm run generate-traffic` |
-| **런타임** | `tsx` (TypeScript 직접 실행) |
-
-#### 4.8.1 생성 로직
-
-- **생성 주기:** 1초마다 배치 생성
-- **배치 크기:** 2~5건 (랜덤)
+- **생성 주기:** 300ms마다 1건 (~3.3건/초)
+- **플러시 주기:** 500ms마다 배치 플러시 (~2회/초 상태 업데이트)
 - **위협 확률:** 15%
 - **위협 레벨:** 1~5 (위협 시 랜덤)
 - **패킷 크기:** 64~65,535 바이트 (랜덤)
 - **도시 풀:** 전 세계 32개 주요 도시 (출발지와 목적지 중복 방지)
 - **프로토콜:** 10종 (TCP, UDP, ICMP, HTTP, HTTPS, DNS, SSH, FTP, SMTP, TLS)
 - **포트:** 프로토콜별 기본 포트 매핑, 미매핑 시 1024~65535 랜덤
-- **인증:** `SUPABASE_SERVICE_ROLE_KEY` (service role key) 사용
-- **종료:** `Ctrl+C` (SIGINT) 시 총 생성 건수 출력 후 정상 종료
+- **IP 주소:** Faker.js `faker.internet.ipv4()`로 생성
+- **ID:** `crypto.randomUUID()`로 생성
+
+### 4.8 트래픽 데이터 생성기
+
+| 항목 | 상세 |
+|------|------|
+| **모듈** | `lib/traffic-generator.ts` |
+| **실행 환경** | 브라우저 (클라이언트 사이드) |
+| **의존성** | `@faker-js/faker`, `lib/constants.ts` |
+
+#### 4.8.1 생성 함수
+
+- **`generateTrafficEvent()`**: 단일 트래픽 이벤트 객체 생성
+  - 출발지/목적지 도시 랜덤 선택 (중복 방지)
+  - 프로토콜 랜덤 선택 + 포트 매핑
+  - 15% 확률 위협 이벤트 (레벨 1~5 + 위협 유형 설정)
+  - Faker.js IPv4 주소 생성
+  - 패킷 크기 64~65,535 랜덤
+- **`generateBatch(count)`**: 지정 건수만큼 배치 생성
+- **`randomCity()`**: 32개 도시 풀에서 랜덤 선택
+
+#### 4.8.2 EventBuffer 클래스
+
+| 항목 | 상세 |
+|------|------|
+| **모듈** | `lib/event-buffer.ts` |
+| **용도** | 이벤트 배치 처리를 통한 상태 업데이트 횟수 제어 |
+
+- **`push(item)`**: 내부 버퍼에 아이템 추가
+- **`flush()`**: 버퍼의 아이템을 배치로 콜백에 전달 후 버퍼 초기화
+- **`start()`**: 플러시 인터벌 타이머 시작
+- **`stop()`**: 타이머 중지 + 잔여 버퍼 플러시
+- **`pending`**: 현재 버퍼에 대기 중인 아이템 수
 
 ### 4.9 CyberPanel UI 컴포넌트
 
@@ -401,15 +453,55 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 |------|------|
 | **컴포넌트** | `Header.tsx` |
 | **구성 요소** | 로고 + 글리치 타이틀 / 버전 + REALTIME 배지 / 이벤트 카운터 / 시계 + 연결 상태 |
+| **최적화** | `React.memo`, AnimatedCounter RAF cleanup |
 
 #### 4.10.1 세부 요소
 
 - **로고:** 이중 정사각형 회전 아이콘 (네온 그린 글로우)
 - **버전 배지:** `v2.0.4` (그린 테두리)
 - **REALTIME 배지:** 시안 테두리 + 배경
-- **이벤트 카운터:** 총 수신 이벤트 수 (1000 단위 구분자)
+- **이벤트 카운터:** 총 수신 이벤트 수 (AnimatedCounter, 400ms 커빅 보간)
 - **시계:** 24시간 형식 (`HH:MM:SS`), 1초마다 갱신, 시안 텍스트 글로우
-- **연결 상태:** 원형 인디케이터 + CONNECTED/OFFLINE 텍스트
+- **연결 상태:** 원형 인디케이터 + CONNECTED 텍스트 (항상 LIVE, 데이터가 클라이언트 생성이므로)
+
+### 4.11 부팅 시퀀스 (Boot Sequence)
+
+| 항목 | 상세 |
+|------|------|
+| **컴포넌트** | `BootSequence.tsx` |
+| **위치** | 페이지 진입 시 풀스크린 오버레이 (z-50) |
+
+#### 4.11.1 구현 상세
+
+- **부팅 로그:** 7단계 시네마틱 메시지 순차 표시 (0ms ~ 1900ms)
+  1. `INITIALIZING TRAFFIC SIGHT v2.0.4...`
+  2. `LOADING KERNEL MODULES...`
+  3. `CONNECTING TO TRAFFIC STREAM...`
+  4. `INITIALIZING 3D GLOBE RENDERER...`
+  5. `ACTIVATING THREAT DETECTION ENGINE...`
+  6. `ALL SYSTEMS OPERATIONAL` (매트릭스 그린 하이라이트)
+  7. `LAUNCHING DASHBOARD...` (시안 하이라이트)
+- **프로그레스 바:** 메시지 진행에 따라 0% -> 100% 애니메이션
+- **페이드아웃:** 2300ms에 시작, 2800ms에 완료 (500ms 전환)
+- **배경:** `cyber-bg` 풀스크린
+- **폰트:** 모노스페이스, 12px
+
+### 4.12 모바일 네비게이션 (Mobile Nav)
+
+| 항목 | 상세 |
+|------|------|
+| **컴포넌트** | `MobileNav.tsx` |
+| **표시 조건** | `lg` (1024px) 미만에서만 표시 |
+
+#### 4.12.1 구현 상세
+
+- **탭 구성:** Globe / Stats / Threats (3탭)
+- **탭 아이콘:** ◉ (Globe), ▦ (Stats), ⚠ (Threats)
+- **활성 탭:** 매트릭스 그린 하단 보더 + 텍스트 글로우 + 녹색 배경
+- **비활성 탭:** 40% 불투명도, 호버 시 60%
+- **Globe 탭:** 최소 높이 350px의 글로브 영역
+- **Stats 탭:** StatsPanel 컴포넌트 렌더링
+- **Threats 탭:** ThreatPanel 컴포넌트 렌더링
 
 ---
 
@@ -421,37 +513,37 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Header                                                             │
 │  [Logo + GlitchText "TRAFFIC SIGHT"] [v2.0.4] [Events: N] [Clock] [Status] │
-├──────────────┬──────────────────────────────────┬───────────────────┤
-│              │                                  │                   │
-│  Stats Panel │         3D Globe                 │  Threat Panel     │
-│  (280px)     │         (flex: 1)                │  (300px)          │
-│              │                                  │                   │
-│  ┌──────┐   │      ┌─────────────────┐         │  ┌──────────┐    │
-│  │OVERVIEW│  │      │                 │         │  │THREAT LV │    │
-│  │Packets │  │      │   ○ 3D Globe    │         │  │  Gauge   │    │
-│  │Threats │  │      │   Auto-rotate   │         │  └──────────┘    │
-│  │Bandwidth│ │      │   Arc Anim      │         │  ┌──────────┐    │
-│  │Pkts/sec│  │      │                 │         │  │THREAT    │    │
-│  └──────┘   │      └─────────────────┘         │  │TYPES     │    │
-│  ┌──────┐   │                                  │  └──────────┘    │
-│  │PROTOCOLS│ │                                  │  ┌──────────┐    │
-│  │Donut   │  │                                  │  │LIVE FEED │    │
-│  └──────┘   │                                  │  │  ↕ slide  │    │
-│  ┌──────┐   │                                  │  │  in/out   │    │
-│  │BANDWIDTH│ │                                  │  └──────────┘    │
-│  │Line    │  │                                  │                   │
-│  └──────┘   │                                  │                   │
-│  ┌──────┐   │                                  │                   │
-│  │TOP SRC│  │                                  │                   │
-│  └──────┘   │                                  │                   │
-├──────────────┴──────────────────────────────────┴───────────────────┤
-│  Log Terminal (200px height, full width)                            │
-│  ● ● ● Network Traffic Log                             N entries   │
-│  [HH:MM:SS] SRC_IP → DST_IP PROTO :PORT [SIZE] ROUTE  ⚠ THREAT   │
-│  [HH:MM:SS] SRC_IP → DST_IP PROTO :PORT [SIZE] ROUTE              │
-│  ...                                                                │
-│  root@traffic-sight:~$ █                                           │
-└─────────────────────────────────────────────────────────────────────┘
+├──────────────┬──────────────────────────────────────┬───────────────────┤
+│              │                                      │                   │
+│  Stats Panel │         3D Globe                     │  Threat Panel     │
+│  (280px)     │         (flex: 1)                    │  (300px)          │
+│              │                                      │                   │
+│  ┌──────┐   │      ┌─────────────────┐             │  ┌──────────┐    │
+│  │OVERVIEW│  │      │                 │             │  │THREAT LV │    │
+│  │Packets │  │      │   ○ 3D Globe    │             │  │  Gauge   │    │
+│  │Threats │  │      │   Auto-rotate   │             │  └──────────┘    │
+│  │Bandwidth│ │      │   Arc + Ring    │             │  ┌──────────┐    │
+│  │Pkts/sec│  │      │   Vignette      │             │  │THREAT    │    │
+│  └──────┘   │      └─────────────────┘             │  │TYPES     │    │
+│  ┌──────┐   │                                      │  └──────────┘    │
+│  │PROTOCOLS│ │                                      │  ┌──────────┐    │
+│  │Donut   │  │                                      │  │LIVE FEED │    │
+│  └──────┘   │                                      │  │  ↕ slide  │    │
+│  ┌──────┐   │                                      │  │  in/out   │    │
+│  │BANDWIDTH│ │                                      │  └──────────┘    │
+│  │Line    │  │                                      │                   │
+│  └──────┘   │                                      │                   │
+│  ┌──────┐   │                                      │                   │
+│  │TOP SRC│  │                                      │                   │
+│  └──────┘   │                                      │                   │
+├──────────────┴──────────────────────────────────────┴───────────────────┤
+│  Log Terminal (200px height, full width)                                │
+│  ● ● ● Network Traffic Log                                 N entries   │
+│  [HH:MM:SS] SRC_IP → DST_IP PROTO :PORT [SIZE] ROUTE  ⚠ THREAT       │
+│  [HH:MM:SS] SRC_IP → DST_IP PROTO :PORT [SIZE] ROUTE                  │
+│  ...                                                                    │
+│  root@traffic-sight:~$ █                                               │
+└─────────────────────────────────────────────────────────────────────────┘
 
  ░░░░░░░░░░ Matrix Rain Background (z-0, opacity 15%) ░░░░░░░░░░░░░░
 ```
@@ -459,9 +551,11 @@ Traffic Sight는 이러한 간극을 해소하기 위해 탄생하였다. Faker.
 ### 5.2 CSS Grid 구성
 
 ```css
-/* 메인 콘텐츠 영역 */
-grid-template-columns: 280px 1fr 300px;  /* lg 이상 */
-grid-template-columns: 1fr;              /* lg 미만 (사이드바 숨김) */
+/* 데스크탑 메인 콘텐츠 영역 (lg 이상) */
+grid-template-columns: 280px 1fr 300px;
+
+/* 모바일 (lg 미만) */
+/* MobileNav 탭 네비게이션으로 대체 (Globe / Stats / Threats) */
 ```
 
 ### 5.3 Z-Index 레이어 구조
@@ -472,15 +566,16 @@ grid-template-columns: 1fr;              /* lg 미만 (사이드바 숨김) */
 | `z-10` | Main Content (글로브, 패널) | 주요 콘텐츠 영역 |
 | `z-10` | Footer (로그 터미널) | 하단 로그 영역 |
 | `z-20` | Header | 최상단 고정 네비게이션 |
+| `z-50` | BootSequence | 부팅 시퀀스 오버레이 (마운트 시에만) |
 
 ### 5.4 반응형 브레이크포인트
 
 | 브레이크포인트 | 동작 |
 |---------------|------|
-| **1920px** (Full HD) | 전체 레이아웃 표시, 글로브 최대 크기 |
-| **1440px** | 동일 레이아웃, 글로브 크기 약간 축소 |
+| **1920px** (Full HD) | 전체 3열 레이아웃 표시, 글로브 최대 크기 |
+| **1440px** | 동일 3열 레이아웃, 글로브 크기 약간 축소 |
 | **1024px** (lg) | 3열 그리드 유지, 요소 압축 |
-| **1024px 미만** | 좌/우 사이드바 숨김 (`hidden lg:block`), 글로브만 표시 |
+| **1024px 미만** | 탭 기반 모바일 네비게이션 (Globe/Stats/Threats), 하단 로그 터미널 유지 |
 
 ### 5.5 색상 시스템
 
@@ -488,7 +583,7 @@ grid-template-columns: 1fr;              /* lg 미만 (사이드바 숨김) */
 |--------|------|------|
 | `cyber-bg` | 다크 배경 | 페이지 배경색 |
 | `matrix-green` | `#00ff41` | 주요 텍스트, 정상 상태, 보더 |
-| `cyber-cyan` | `#00d4ff` | 보조 강조, 시간, IP 주소 |
+| `cyber-cyan` | `#00d4ff` | 보조 강조, 시간, IP 주소, 대기 효과 |
 | `neon-purple` | 퍼플 계열 | 패킷 크기 표시 |
 | `threat-red` | `#ff0040` | 위협 관련 요소 |
 | `threat-orange` | `#ff6600` | 위협 유형 텍스트, 중간 위험도 |
@@ -507,71 +602,27 @@ grid-template-columns: 1fr;              /* lg 미만 (사이드바 숨김) */
 | `scanline-effect` | CRT 스캔라인 오버레이 |
 | `cyber-border-pulse` | 테두리 펄스 애니메이션 |
 
+### 5.7 글로벌 UX 스타일
+
+| 속성 | 값 | 설명 |
+|------|------|------|
+| `user-select` | `none` | 전역 텍스트 선택 비활성화 (대시보드 몰입감) |
+| `cursor` | `default` | 전역 기본 커서 |
+| 글로브 영역 | `cursor: grab` / `cursor: grabbing` | 글로브 인터랙션 커서 |
+| 버튼 요소 | `cursor: pointer` | 클릭 가능 요소 |
+
 ---
 
 ## 6. 데이터 모델
 
-### 6.1 Supabase 테이블: `traffic_events`
+### 6.1 TrafficEvent (클라이언트 사이드)
 
-#### 6.1.1 스키마 정의
-
-```sql
-CREATE TABLE traffic_events (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at    TIMESTAMPTZ DEFAULT now() NOT NULL,
-  src_ip        TEXT NOT NULL,
-  src_country_code TEXT NOT NULL,
-  src_city      TEXT,
-  src_lat       DOUBLE PRECISION NOT NULL,
-  src_lng       DOUBLE PRECISION NOT NULL,
-  dst_ip        TEXT NOT NULL,
-  dst_country_code TEXT NOT NULL,
-  dst_city      TEXT,
-  dst_lat       DOUBLE PRECISION NOT NULL,
-  dst_lng       DOUBLE PRECISION NOT NULL,
-  protocol      TEXT NOT NULL,
-  port          INTEGER,
-  packet_size   INTEGER NOT NULL,
-  threat_level  INTEGER NOT NULL DEFAULT 0,
-  threat_type   TEXT,
-  status        TEXT NOT NULL DEFAULT 'active'
-);
-```
-
-#### 6.1.2 필드 상세
-
-| 필드 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `id` | UUID | PK | 자동 생성 고유 식별자 |
-| `created_at` | TIMESTAMPTZ | O | 이벤트 생성 시간 (자동) |
-| `src_ip` | TEXT | O | 출발지 IPv4 주소 (Faker 생성) |
-| `src_country_code` | TEXT | O | 출발지 국가 코드 (ISO 3166-1 alpha-2) |
-| `src_city` | TEXT | - | 출발지 도시명 |
-| `src_lat` | DOUBLE PRECISION | O | 출발지 위도 |
-| `src_lng` | DOUBLE PRECISION | O | 출발지 경도 |
-| `dst_ip` | TEXT | O | 목적지 IPv4 주소 (Faker 생성) |
-| `dst_country_code` | TEXT | O | 목적지 국가 코드 |
-| `dst_city` | TEXT | - | 목적지 도시명 |
-| `dst_lat` | DOUBLE PRECISION | O | 목적지 위도 |
-| `dst_lng` | DOUBLE PRECISION | O | 목적지 경도 |
-| `protocol` | TEXT | O | 네트워크 프로토콜 |
-| `port` | INTEGER | - | 대상 포트 번호 |
-| `packet_size` | INTEGER | O | 패킷 크기 (바이트) |
-| `threat_level` | INTEGER | O | 위협 레벨 (0: 정상, 1~5: 위협) |
-| `threat_type` | TEXT | - | 위협 유형 (threat_level > 0 시 설정) |
-| `status` | TEXT | O | 이벤트 상태 (기본값: `active`) |
-
-#### 6.1.3 Supabase Realtime 설정
-
-```sql
--- Realtime publication 활성화
-ALTER PUBLICATION supabase_realtime ADD TABLE traffic_events;
-```
+트래픽 이벤트 데이터는 외부 데이터베이스 없이 클라이언트에서 직접 생성된다. `lib/traffic-generator.ts`가 Faker.js를 사용하여 이벤트를 생성하고, `useTrafficStream` 훅에서 `crypto.randomUUID()`로 ID를, `new Date().toISOString()`으로 타임스탬프를 부여한다.
 
 ### 6.2 TypeScript 인터페이스
 
 ```typescript
-// lib/supabase/types.ts
+// lib/types.ts
 
 export interface TrafficEvent {
   id: string;
@@ -605,6 +656,29 @@ export interface ArcData {
 }
 ```
 
+#### 6.2.1 필드 상세
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `id` | string | PK | `crypto.randomUUID()` 자동 생성 |
+| `created_at` | string | O | 이벤트 생성 시간 (ISO 8601) |
+| `src_ip` | string | O | 출발지 IPv4 주소 (Faker 생성) |
+| `src_country_code` | string | O | 출발지 국가 코드 (ISO 3166-1 alpha-2) |
+| `src_city` | string \| null | - | 출발지 도시명 |
+| `src_lat` | number | O | 출발지 위도 |
+| `src_lng` | number | O | 출발지 경도 |
+| `dst_ip` | string | O | 목적지 IPv4 주소 (Faker 생성) |
+| `dst_country_code` | string | O | 목적지 국가 코드 |
+| `dst_city` | string \| null | - | 목적지 도시명 |
+| `dst_lat` | number | O | 목적지 위도 |
+| `dst_lng` | number | O | 목적지 경도 |
+| `protocol` | string | O | 네트워크 프로토콜 |
+| `port` | number \| null | - | 대상 포트 번호 |
+| `packet_size` | number | O | 패킷 크기 (바이트) |
+| `threat_level` | number | O | 위협 레벨 (0: 정상, 1~5: 위협) |
+| `threat_type` | string \| null | - | 위협 유형 (threat_level > 0 시 설정) |
+| `status` | string | O | 이벤트 상태 (기본값: `active`) |
+
 ### 6.3 통계 인터페이스
 
 ```typescript
@@ -618,8 +692,8 @@ export interface TrafficStats {
   threatCount: number;           // 위협 수
   threatsByType: Record<string, number>;          // 위협 유형별 분포
   avgThreatLevel: number;        // 평균 위협 레벨
-  bandwidthHistory: number[];    // 대역폭 히스토리 (10개 버킷)
-  packetsPerSecond: number;      // 초당 패킷 수
+  bandwidthHistory: number[];    // 대역폭 히스토리 (10개 버킷, 3초 단위)
+  packetsPerSecond: number;      // 초당 패킷 수 (5초 윈도우 기반)
 }
 ```
 
@@ -660,7 +734,7 @@ export interface TrafficStats {
 | 기술 | 버전 | 용도 |
 |------|------|------|
 | **Next.js** | ^15.1.0 | App Router 기반 React 프레임워크, Turbopack 개발 서버 |
-| **React** | ^19.0.0 | UI 라이브러리, Server/Client Components |
+| **React** | ^19.0.0 | UI 라이브러리, Client Components |
 | **TypeScript** | ^5.7.0 | 정적 타입 시스템 |
 
 ### 7.2 3D 시각화
@@ -677,51 +751,46 @@ export interface TrafficStats {
 | **ECharts** | ^5.5.0 | 고성능 차트 라이브러리 |
 | **echarts-for-react** | ^3.0.2 | ECharts의 React 래퍼 |
 
-### 7.4 실시간 데이터
+### 7.4 데이터 생성
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
-| **@supabase/supabase-js** | ^2.49.0 | Supabase 클라이언트 (Realtime, DB) |
-| **@supabase/ssr** | ^0.6.0 | Supabase SSR 유틸리티 |
+| **@faker-js/faker** | ^10.0.0 | 모의 네트워크 트래픽 데이터 생성 (클라이언트 사이드) |
 
-### 7.5 데이터 생성
-
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| **@faker-js/faker** | ^10.0.0 | 모의 네트워크 트래픽 데이터 생성 |
-
-### 7.6 애니메이션
+### 7.5 애니메이션
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
 | **GSAP** | ^3.13.0 | 고성능 애니메이션 엔진 |
 | **@gsap/react** | ^2.1.0 | GSAP React 통합 |
-| **Motion** (Framer Motion) | ^12.0.0 | 선언적 React 애니메이션 (리스트 진입/퇴장) |
+| **Motion** (Framer Motion) | ^12.0.0 | 선언적 React 애니메이션 (리스트 진입/퇴장, 부팅 시퀀스) |
 
-### 7.7 스타일링
+### 7.6 스타일링
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
 | **Tailwind CSS** | ^4.0.0 | 유틸리티 퍼스트 CSS (다크 테마, 네온 글로우, 커스텀 색상) |
 | **JetBrains Mono** | (Google Fonts) | 모노스페이스 기본 폰트 |
 
-### 7.8 개발 도구
+### 7.7 개발 도구
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
 | **ESLint** | ^9.0.0 | 코드 린팅 |
 | **eslint-config-next** | ^15.1.0 | Next.js ESLint 규칙 |
-| **tsx** | ^4.0.0 | TypeScript 직접 실행 (데이터 생성기) |
-| **dotenv** | ^17.3.1 | 환경 변수 로딩 |
+| **Vitest** | ^4.0.0 | 테스트 러너 + assertion |
+| **@testing-library/react** | ^16.3.0 | 컴포넌트 렌더링 + DOM 쿼리 |
+| **@testing-library/jest-dom** | ^6.9.0 | DOM matcher 확장 |
+| **jsdom** | ^28.1.0 | 브라우저 환경 시뮬레이션 |
+| **tsx** | ^4.0.0 | TypeScript 직접 실행 |
 
-### 7.9 배포
+### 7.8 배포
 
 | 플랫폼 | 용도 |
 |--------|------|
 | **Vercel** | Next.js 호스팅 및 자동 배포 |
-| **Supabase** | PostgreSQL 데이터베이스 + Realtime 서비스 |
 
-### 7.10 프로젝트 구조
+### 7.9 프로젝트 구조
 
 ```
 traffic-sight/
@@ -732,41 +801,51 @@ traffic-sight/
 │   └── providers.tsx       # 클라이언트 프로바이더 래퍼
 ├── components/
 │   ├── dashboard/
-│   │   ├── GlobeSection.tsx    # 3D 글로브 + 아크 + 마커
+│   │   ├── GlobeSection.tsx    # 3D 글로브 + 아크 + 링 + 마커
 │   │   ├── Header.tsx          # 헤더 (타이틀, 시계, 연결 상태)
 │   │   ├── LogTerminal.tsx     # 로그 터미널
+│   │   ├── MobileNav.tsx       # 모바일 탭 네비게이션
 │   │   ├── StatsPanel.tsx      # 통계 패널 (차트, 카운터)
 │   │   └── ThreatPanel.tsx     # 위협 패널 (게이지, 피드)
 │   ├── effects/
+│   │   ├── BootSequence.tsx    # 시네마틱 부팅 시퀀스
 │   │   ├── GlitchText.tsx      # 글리치 텍스트 이펙트
 │   │   └── MatrixRain.tsx      # 매트릭스 레인 Canvas
 │   └── ui/
 │       └── CyberPanel.tsx      # 사이버펑크 카드 컨테이너
 ├── hooks/
-│   ├── useTrafficStats.ts      # 트래픽 통계 계산 훅
-│   └── useTrafficStream.ts     # Supabase Realtime 구독 훅
+│   ├── useTrafficStats.ts      # 트래픽 통계 계산 훅 (useStableRef 최적화)
+│   └── useTrafficStream.ts     # 클라이언트 사이드 트래픽 생성 + EventBuffer 훅
 ├── lib/
-│   ├── constants.ts            # 상수 (도시, 프로토콜, 위협 유형)
-│   └── supabase/
-│       ├── client.ts           # Supabase 클라이언트 초기화
-│       └── types.ts            # TypeScript 타입 정의
-├── scripts/
-│   └── generate-traffic.ts     # 트래픽 데이터 생성 스크립트
+│   ├── constants.ts            # 상수 (도시, 프로토콜, 위협 유형, 롤링 윈도우 등)
+│   ├── event-buffer.ts         # EventBuffer 클래스 (배치 처리)
+│   ├── traffic-generator.ts    # Faker.js 기반 트래픽 이벤트 생성기
+│   └── types.ts                # TypeScript 타입 정의 (TrafficEvent, ArcData)
 ├── workers/
 │   └── matrix-rain.worker.ts   # 매트릭스 레인 Web Worker (예비)
 ├── next.config.ts
 ├── package.json
 ├── postcss.config.mjs
+├── vitest.config.ts
+├── vitest.setup.ts
 └── tsconfig.json
 ```
 
-### 7.11 환경 변수
+### 7.10 핵심 상수
 
-| 변수명 | 용도 | 사용처 |
-|--------|------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 클라이언트, 생성기 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 익명 키 (RLS 적용) | 클라이언트 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서비스 역할 키 (RLS 우회) | 생성기 스크립트 |
+| 상수 | 값 | 설명 |
+|------|------|------|
+| `ROLLING_WINDOW` | 100 | 클라이언트 측 이벤트 버퍼 크기 |
+| `MAX_ARCS` | 20 | 글로브 위 동시 표시 아크 수 |
+| `MAX_LOG_ENTRIES` | 30 | 로그 터미널 최대 표시 건수 |
+| `MAX_THREAT_ENTRIES` | 20 | 위협 패널 버퍼 크기 |
+| `ARC_TTL_MS` | 6000 | 아크 수명 (밀리초) |
+| `RING_TTL_MS` | 3000 | 링 수명 (밀리초) |
+| `GENERATION_INTERVAL_MS` | 300 | 이벤트 생성 주기 (밀리초) |
+| `FLUSH_INTERVAL_MS` | 500 | 이벤트 버퍼 플러시 주기 (밀리초) |
+| `BANDWIDTH_BUCKET_COUNT` | 10 | 대역폭 차트 버킷 수 |
+| `BANDWIDTH_WINDOW_SEC` | 30 | 대역폭 차트 시간 윈도우 (초) |
+| `BANDWIDTH_BUCKET_SEC` | 3 | 대역폭 차트 버킷 단위 (초) |
 
 ---
 
@@ -777,7 +856,7 @@ traffic-sight/
 | 지표 | 목표치 | 측정 방법 |
 |------|--------|----------|
 | **렌더링 프레임율** | 60fps 유지 | Chrome DevTools Performance 탭 |
-| **실시간 지연 시간** | 데이터 삽입 후 1초 이내 UI 반영 | Supabase INSERT 타임스탬프 vs 클라이언트 수신 시간 비교 |
+| **상태 업데이트 빈도** | ~2회/초 (FLUSH_INTERVAL_MS=500ms) | EventBuffer 플러시 주기 기반 |
 | **3D 글로브 초기 로딩** | 3초 이내 | `dynamic()` 로딩 완료까지 소요 시간 |
 | **매트릭스 레인 CPU 사용률** | 메인 스레드 부하 10% 이하 | Chrome Performance Monitor |
 | **메모리 사용량** | 안정 상태에서 200MB 이하 | Chrome Task Manager |
@@ -786,11 +865,14 @@ traffic-sight/
 
 | 지표 | 목표치 | 설명 |
 |------|--------|------|
-| **이벤트 생성 속도** | 2~5건/초 | 생성기 스크립트 배치 크기 |
+| **이벤트 생성 속도** | ~3.3건/초 | GENERATION_INTERVAL_MS=300ms (1건/300ms) |
+| **상태 플러시 빈도** | ~2회/초 | FLUSH_INTERVAL_MS=500ms |
 | **위협 비율** | 약 15% | 전체 이벤트 대비 위협 이벤트 비율 |
-| **롤링 윈도우** | 최근 50건 | 클라이언트 측 이벤트 버퍼 크기 |
-| **최대 동시 아크** | 30개 | 글로브 위 동시 표시 아크 수 |
+| **롤링 윈도우** | 최근 100건 | 클라이언트 측 이벤트 버퍼 크기 (`ROLLING_WINDOW`) |
+| **최대 동시 아크** | 20개 | 글로브 위 동시 표시 아크 수 + TTL 6초 자동 제거 |
+| **최대 동시 링** | 15개 | 글로브 위 동시 표시 링 수 + TTL 3초 자동 제거 |
 | **최대 위협 항목** | 20건 | 위협 패널 버퍼 크기 |
+| **최대 로그 항목** | 30건 | 로그 터미널 표시 건수 |
 
 ### 8.3 반응형 지표
 
@@ -798,8 +880,8 @@ traffic-sight/
 |--------|------|----------|
 | **1920 x 1080** (Full HD) | 완전 지원 | 3열 레이아웃 + 모든 패널 표시 |
 | **1440 x 900** | 완전 지원 | 3열 레이아웃 유지, 글로브 약간 축소 |
-| **1024 x 768** | 부분 지원 | 3열 레이아웃 유지 (lg 브레이크포인트) |
-| **1024px 미만** | 기본 지원 | 글로브 + 로그 터미널만 표시, 사이드바 숨김 |
+| **1024 x 768** | 완전 지원 | 3열 레이아웃 유지 (lg 브레이크포인트) |
+| **1024px 미만** | 완전 지원 | 탭 기반 모바일 네비게이션 (Globe/Stats/Threats) + 하단 로그 |
 
 ### 8.4 코드 품질 지표
 
@@ -807,8 +889,10 @@ traffic-sight/
 |------|--------|
 | TypeScript strict 모드 | 활성화 |
 | ESLint 에러 | 0건 |
+| 테스트 | 112개+ 테스트 통과 (Vitest + React Testing Library) |
 | 컴포넌트 재사용성 | CyberPanel 기반 일관된 UI |
-| 상태 관리 | React 내장 훅 (useState, useMemo, useCallback) |
+| 상태 관리 | React 내장 훅 (useState, useMemo, useCallback, useRef) |
+| 성능 최적화 | React.memo 전 대시보드 컴포넌트, useStableRef 참조 안정화 |
 | SSR 호환성 | 3D/Canvas 컴포넌트는 `dynamic({ ssr: false })` 처리 |
 
 ---
@@ -819,7 +903,6 @@ traffic-sight/
 
 | 기능 | 설명 | 우선순위 |
 |------|------|----------|
-| **모바일 반응형** | 768px 이하 모바일 레이아웃 최적화, 글로브 터치 인터랙션 | 높음 |
 | **다크/라이트 테마 전환** | 사이버펑크 외 클린 라이트 테마 옵션 | 중간 |
 | **필터링 기능** | 프로토콜, 국가, 위협 레벨별 실시간 필터 | 높음 |
 | **글로브 클릭 인터랙션** | 도시 마커 클릭 시 해당 도시 트래픽 상세 팝업 | 중간 |
@@ -842,7 +925,7 @@ traffic-sight/
 |------|------|----------|
 | **실제 네트워크 데이터 연동** | 실제 서버 로그 또는 Cloudflare/AWS 트래픽 데이터 연동 | 높음 |
 | **AI 이상 탐지** | 머신러닝 기반 트래픽 패턴 이상 탐지 및 자동 분류 | 중간 |
-| **협업 모드** | 다중 사용자가 동일 대시보드를 실시간 공유 (Supabase Presence) | 중간 |
+| **협업 모드** | 다중 사용자가 동일 대시보드를 실시간 공유 | 중간 |
 | **대시보드 커스터마이징** | 드래그 앤 드롭 위젯 배치, 차트 유형 변경 | 낮음 |
 | **API 엔드포인트** | REST API로 외부 시스템에서 트래픽 데이터 주입 | 중간 |
 | **PDF 보고서 생성** | 특정 시간대 트래픽/위협 요약 보고서 PDF 내보내기 | 낮음 |
@@ -851,13 +934,11 @@ traffic-sight/
 
 | 항목 | 현재 상태 | 개선 방향 |
 |------|----------|----------|
-| 글로브 크기 계산 | `window.innerWidth * 0.5` 하드코딩 | `ResizeObserver` 기반 동적 크기 조정 |
-| 상태 관리 | `useState` + `useCallback` | 대규모 확장 시 Zustand 또는 Jotai 도입 검토 |
-| 초기 데이터 로딩 | 단순 `select` 쿼리 | 페이지네이션 + 인피니트 스크롤 |
+| 상태 관리 | `useState` + `useCallback` + `useStableRef` | 대규모 확장 시 Zustand 또는 Jotai 도입 검토 |
 | 에러 핸들링 | 최소 수준 | Error Boundary + Toast 알림 |
-| 테스트 | 미구현 | Vitest + React Testing Library + Playwright E2E |
 | 접근성 | 미적용 | ARIA 레이블, 키보드 내비게이션, 고대비 모드 |
 | Providers 래퍼 | 빈 프래그먼트 | 향후 전역 상태/테마 프로바이더 추가 시 활용 |
+| E2E 테스트 | 미구현 | Playwright E2E 테스트 추가 |
 
 ---
 
